@@ -36,8 +36,6 @@ while ($row = $stmt->fetch()) {
         $serviceMap[$deptId][$serviceId]['requirements'][] = $row['requirement'];
     }
 }
-
-
 ?>
 
 <!DOCTYPE html>
@@ -51,38 +49,25 @@ while ($row = $stmt->fetch()) {
             font-size: 0.85em;
             padding: 0.4em 0.6em;
         }
-
         .modal-header {
             background-color: #5a5cb7;
             color: white;
             border-top-left-radius: 0.3rem;
             border-top-right-radius: 0.3rem;
         }
-
         .modal-title {
             font-weight: bold;
             font-size: 1.25rem;
         }
-
         .modal-body {
             background-color: #f8f9fa;
             padding: 20px;
             border-bottom-left-radius: 0.3rem;
             border-bottom-right-radius: 0.3rem;
         }
-
-        .modal-body p strong {
-            color: #343a40;
-        }
-
-        .modal-body ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        .modal-body li {
-            margin-bottom: 4px;
-        }
-
+        .modal-body p strong { color: #343a40; }
+        .modal-body ul { list-style-type: none; padding-left: 0; }
+        .modal-body li { margin-bottom: 4px; }
         .modal-body ul li::before {
             margin-right: 8px;
             color: #5a5cb7;
@@ -91,22 +76,10 @@ while ($row = $stmt->fetch()) {
             margin-top: 4px;
             padding-left: 1.5rem;
         }
-        .text-primary {
-            font-weight: 600;
-        }
-
-        .close {
-            color: white;
-            opacity: 0.8;
-        }
-        .text-muted {
-            font-size: 0.95em;
-        }
-
-        .close:hover {
-            color: #fff;
-            opacity: 1;
-    }
+        .text-primary { font-weight: 600; }
+        .close { color: white; opacity: 0.8; }
+        .text-muted { font-size: 0.95em; }
+        .close:hover { color: #fff; opacity: 1; }
     </style>
 </head>
 <body class="p-4">
@@ -127,28 +100,35 @@ while ($row = $stmt->fetch()) {
 
     <div class="row">
         <?php foreach ($departments as $d): 
-            $searchText = strtolower($d['name'] . ' ' . $d['description'] . ' ' . $d['services']);
+            $searchText = strtolower($d['name'] . ' ' . $d['acronym'] . ' ' . $d['description'] . ' ' . $d['services']);
             $services = array_filter(array_map('trim', explode(',', $d['services'])));
         ?>
         <div class="col-md-4 mb-4 dept-card" data-search="<?= htmlspecialchars($searchText) ?>">
             <div class="card h-100 shadow-sm border-0" data-toggle="modal" data-target="#viewModal<?= $d['id'] ?>">
                 <div class="card-body">
-                    <h5 class="card-title"><i class='bx bx-building-house'></i> <?= htmlspecialchars($d['name']) ?></h5>
+                    <h5 class="card-title">
+                        <i class='bx bx-building-house'></i>
+                        <?= htmlspecialchars($d['acronym'] ? $d['acronym'] . ' - ' : '') ?><?= htmlspecialchars($d['name']) ?>
+                    </h5>
                     <?php foreach ($services as $svc): ?>
                         <span class="badge bg-info text-dark me-1 mb-1"><?= htmlspecialchars($svc) ?></span>
                     <?php endforeach; ?>
                 </div>
             </div>
         </div>
-            <!-- View Modal -->
+
+        <!-- View Modal -->
         <div class="modal fade" id="viewModal<?= $d['id'] ?>" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title"><?= htmlspecialchars($d['name']) ?></h5>
+                        <h5 class="modal-title">
+                            <?= htmlspecialchars($d['acronym'] ? $d['acronym'] . ' - ' : '') ?><?= htmlspecialchars($d['name']) ?>
+                        </h5>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
                     <div class="modal-body">
+                        <p><strong>Acronym:</strong> <?= htmlspecialchars($d['acronym']) ?></p>
                         <p><strong>Description:</strong> <?= htmlspecialchars($d['description']) ?></p>
                         <p><strong>Services & Requirements:</strong></p>
                         <ul class="list-unstyled">
@@ -175,72 +155,73 @@ while ($row = $stmt->fetch()) {
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                         <button class="btn btn-sm btn-warning mt-2" data-toggle="modal" data-target="#editModal<?= $d['id'] ?>">
-                        ✏️ Edit
-                    </button>
-
+                            ✏️ Edit
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+
         <!-- Edit Modal -->
-<div class="modal fade" id="editModal<?= $d['id'] ?>" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <form class="modal-content" method="post" action="ajax_update_department.php">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title"><i class='bx bx-edit'></i> Edit Department</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" name="department_id" value="<?= $d['id'] ?>">
+        <div class="modal fade" id="editModal<?= $d['id'] ?>" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <form class="modal-content" method="post" action="ajax_update_department.php">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title"><i class='bx bx-edit'></i> Edit Department</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="department_id" value="<?= $d['id'] ?>">
 
-                <label>Department Name:</label>
-                <input name="name" class="form-control mb-2" value="<?= htmlspecialchars($d['name']) ?>" required>
+                        <label>Department Name:</label>
+                        <input name="name" class="form-control mb-2" value="<?= htmlspecialchars($d['name']) ?>" required>
 
-                <label>Description:</label>
-                <textarea name="description" class="form-control mb-3"><?= htmlspecialchars($d['description']) ?></textarea>
+                        <label>Acronym:</label>
+                        <input name="acronym" class="form-control mb-2" value="<?= htmlspecialchars($d['acronym']) ?>">
 
-                <label>Services & Requirements:</label>
-                <div class="service-edit-area">
-                    <?php if (isset($serviceMap[$d['id']])): ?>
-                        <?php foreach ($serviceMap[$d['id']] as $svcId => $svc): ?>
-                            <div class="service-edit-block mb-3 p-2 border rounded">
-                                <input type="hidden" name="service_ids[]" value="<?= $svcId ?>">
-                                <input type="text" name="service_names[]" class="form-control mb-1" value="<?= htmlspecialchars($svc['name']) ?>" placeholder="Service Name" required>
-                                
-                                <div class="requirement-group">
-                                    <?php if (!empty($svc['requirements'])): ?>
-                                        <?php foreach ($svc['requirements'] as $req): ?>
-                                            <div class="input-group mb-1">
-                                                <input type="text" name="requirements[<?= $svcId ?>][]" class="form-control" value="<?= htmlspecialchars($req) ?>" placeholder="Requirement">
+                        <label>Description:</label>
+                        <textarea name="description" class="form-control mb-3"><?= htmlspecialchars($d['description']) ?></textarea>
+
+                        <label>Services & Requirements:</label>
+                        <div class="service-edit-area">
+                            <?php if (isset($serviceMap[$d['id']])): ?>
+                                <?php foreach ($serviceMap[$d['id']] as $svcId => $svc): ?>
+                                    <div class="service-edit-block mb-3 p-2 border rounded">
+                                        <input type="hidden" name="service_ids[]" value="<?= $svcId ?>">
+                                        <input type="text" name="service_names[]" class="form-control mb-1" value="<?= htmlspecialchars($svc['name']) ?>" placeholder="Service Name" required>
+                                        
+                                        <div class="requirement-group">
+                                            <?php if (!empty($svc['requirements'])): ?>
+                                                <?php foreach ($svc['requirements'] as $req): ?>
+                                                    <div class="input-group mb-1">
+                                                        <input type="text" name="requirements[<?= $svcId ?>][]" class="form-control" value="<?= htmlspecialchars($req) ?>" placeholder="Requirement">
+                                                        <div class="input-group-append">
+                                                            <button type="button" class="btn btn-danger remove-req">X</button>
+                                                        </div>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                            <div class="input-group mb-2">
+                                                <input type="text" name="requirements[<?= $svcId ?>][]" class="form-control" placeholder="Add new requirement (optional)">
                                                 <div class="input-group-append">
                                                     <button type="button" class="btn btn-danger remove-req">X</button>
                                                 </div>
                                             </div>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                    <div class="input-group mb-2">
-                                        <input type="text" name="requirements[<?= $svcId ?>][]" class="form-control" placeholder="Add new requirement (optional)">
-                                        <div class="input-group-append">
-                                            <button type="button" class="btn btn-danger remove-req">X</button>
                                         </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary add-req">+ Add Requirement</button>
                                     </div>
-                                </div>
-
-                                <button type="button" class="btn btn-sm btn-outline-secondary add-req">+ Add Requirement</button>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-                <button type="button" class="btn btn-sm btn-success mt-2" id="addNewServiceBtn<?= $d['id'] ?>">+ Add New Service</button>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success mt-2" id="addNewServiceBtn<?= $d['id'] ?>">+ Add New Service</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-warning">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-warning">Save Changes</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
+        </div>
 
         <?php endforeach; ?>
     </div>
@@ -256,19 +237,21 @@ while ($row = $stmt->fetch()) {
             </div>
             <div class="modal-body">
                 <input name="name" class="form-control mb-2" placeholder="Department Name" required>
+                <input name="acronym" class="form-control mb-2" placeholder="Acronym (e.g., DOH)">
                 <textarea name="description" class="form-control mb-2" placeholder="Description"></textarea>
+
                 <label>Services Offered:</label>
-            <div id="serviceFields" class="mb-2">
-                <div class="service-group">
-                    <div class="input-group mb-2">
-                        <input type="text" name="services[]" class="form-control" placeholder="Enter a service" required>
-                        <div class="input-group-append">
-                            <button type="button" class="btn btn-danger removeService">X</button>
+                <div id="serviceFields" class="mb-2">
+                    <div class="service-group">
+                        <div class="input-group mb-2">
+                            <input type="text" name="services[]" class="form-control" placeholder="Enter a service" required>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger removeService">X</button>
+                            </div>
                         </div>
+                        <input type="text" name="requirements[]" class="form-control mb-2" placeholder="Requirement for above service (optional)">
                     </div>
-                    <input type="text" name="requirements[]" class="form-control mb-2" placeholder="Requirement for above service (optional)">
                 </div>
-            </div>
                 <button type="button" id="addService" class="btn btn-sm btn-secondary">+ Add Service</button>
             </div>
             <div class="modal-footer">
@@ -294,12 +277,9 @@ $(document).on('click', '#addService', function () {
         </div>`;
     $('#serviceFields').append(group);
 });
-// Remove requirement field
 $(document).on('click', '.remove-req', function () {
     $(this).closest('.input-group').remove();
 });
-
-// Add new requirement field
 $(document).on('click', '.add-req', function () {
     const reqField = `
         <div class="input-group mb-2">
@@ -310,11 +290,8 @@ $(document).on('click', '.add-req', function () {
         </div>`;
     const reqGroup = $(this).siblings('.requirement-group');
     const serviceId = $(this).closest('.service-edit-block').find('input[name="service_ids[]"]').val();
-    const lastInput = reqGroup.find('input').last();
     reqGroup.append($(reqField).find('input').attr('name', `requirements[${serviceId}][]`).end());
 });
-
-// Add new service block
 $('[id^="addNewServiceBtn"]').click(function () {
     const deptId = $(this).attr('id').replace('addNewServiceBtn', '');
     const block = `
@@ -333,11 +310,9 @@ $('[id^="addNewServiceBtn"]').click(function () {
         </div>`;
     $(this).siblings('.service-edit-area').append(block);
 });
-
 $(document).on('click', '.removeService', function () {
     $(this).closest('.service-group').remove();
 });
-
 $('#addForm').submit(function(e) {
     e.preventDefault();
     if (confirm("Add this department and services?")) {
@@ -348,7 +323,6 @@ $('#addForm').submit(function(e) {
         });
     }
 });
-
 $('#searchInput').on('input', function () {
     const val = $(this).val().toLowerCase();
     $('.dept-card').each(function () {
@@ -356,7 +330,6 @@ $('#searchInput').on('input', function () {
         $(this).toggle(searchable.includes(val));
     });
 });
-
 $('#clearFilters').click(function () {
     $('#searchInput').val('');
     $('.dept-card').show();
@@ -364,23 +337,13 @@ $('#clearFilters').click(function () {
 $('form').on('submit', function (e) {
     e.preventDefault();
     const form = $(this);
-
     $.post(form.attr('action'), form.serialize(), function (response) {
-        // ✅ Optionally show a success alert
-        // alert(response); // <- You can keep or remove this
-
-        // ✅ Close modal manually (if Bootstrap 4/5)
         form.closest('.modal').modal('hide');
-
-        // ✅ Reload the page to reflect updated info
-        setTimeout(() => {
-            location.reload();
-        }, 500);
+        setTimeout(() => { location.reload(); }, 500);
     }).fail(function (xhr) {
         alert("Update failed: " + xhr.responseText);
     });
 });
-
 </script>
 </body>
 </html>

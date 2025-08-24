@@ -11,17 +11,22 @@ include 'conn.php';
 if (isset($_POST['delete_id'])) {
     $deleteId = $_POST['delete_id'];
 
-    // Delete from auth (foreign key should cascade if set up, but just in case)
-    $pdo->prepare("DELETE FROM auth WHERE resident_id = ?")->execute([$deleteId]);
-    $pdo->prepare("DELETE FROM residents WHERE id = ?")->execute([$deleteId]);
+    // Delete auth first (residents.auth_id references auth.id, ON DELETE CASCADE will remove resident)
+    $stmt = $pdo->prepare("SELECT auth_id FROM residents WHERE id = ?");
+    $stmt->execute([$deleteId]);
+    $authId = $stmt->fetchColumn();
+
+    if ($authId) {
+        $pdo->prepare("DELETE FROM auth WHERE id = ?")->execute([$authId]);
+    }
 
     echo json_encode(['status' => 'success']);
     exit();
 }
 
-// Get all residents with full info
+// Get all residents with their auth info
 $stmt = $pdo->prepare("
-    SELECT r.*, a.email
+    SELECT r.id, r.first_name, r.middle_name, r.last_name, r.created_at, a.email
     FROM residents r
     JOIN auth a ON r.auth_id = a.id
     WHERE a.role = 'Resident'

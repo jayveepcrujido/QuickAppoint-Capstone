@@ -1,124 +1,147 @@
 <?php
-session_start(); // Start session
-
-$host = "localhost";
-$username = "root";
-$password = "";
-$database = "lgu_q_a";
-
-$conn = new mysqli($host, $username, $password, $database);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-$userId = $_SESSION['user_id'] ?? null;
-if (!$userId) {
+session_start();
+if (!isset($_SESSION['auth_id']) || !in_array($_SESSION['role'], ['LGU Personnel','Admin'])) {
     header("Location: login.php");
     exit();
 }
+include 'conn.php';
 
-$deptQuery = "SELECT department_id FROM users WHERE id = ?";
-$stmt = $conn->prepare($deptQuery);
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$stmt->bind_result($departmentId);
-$stmt->fetch();
-$stmt->close();
+// 1) Resolve department for the logged-in LGU Personnel
+$authId = $_SESSION['auth_id'];
+$role = $_SESSION['role'];
 
-// Total Appointments
-$result = $conn->query("SELECT COUNT(*) AS total FROM appointments WHERE department_id = $departmentId");
-$totalAppointments = $result->fetch_assoc()['total'];
+// If Personnel, find their department via lgu_personnel.auth_id
+$departmentId = null;
+if ($role === 'LGU Personnel') {
+    $stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_id = ? LIMIT 1");
+    $stmt->execute([$authId]);
+    $departmentId = $stmt->fetchColumn();
+} else if ($role === 'Admin') {
+    // Admin can optionally view a department via ?department_id=
+    if (isset($_GET['department_id'])) {
+        $departmentId = (int)$_GET['department_id'];
+    }
+}
 
-// Pending Appointments
-$result = $conn->query("SELECT COUNT(*) AS total FROM appointments WHERE department_id = $departmentId AND status='Pending'");
-$pendingAppointments = $result->fetch_assoc()['total'];
+// If not linked yet, keep page working with zeros
+if (!$departmentId) {
+    $departmentId = 0;
+}
 
-// Completed Appointments
-$result = $conn->query("SELECT COUNT(*) AS total FROM appointments WHERE department_id = $departmentId AND status='Completed'");
-$completedAppointments = $result->fetch_assoc()['total'];
+// 2) Totals
+$tot = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE department_id = ?");
+$tot->execute([$departmentId]);
+$totalAppointments = (int)$tot->fetchColumn();
 
-// Appointments per Service
+$pend = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE department_id = ? AND status='Pending'");
+$pend->execute([$departmentId]);
+$pendingAppointments = (int)$pend->fetchColumn();
+
+$comp = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE department_id = ? AND status='Completed'");
+$comp->execute([$departmentId]);
+$completedAppointments = (int)$comp->fetchColumn();
+
+// 3) Appointments per Service (include services with 0 appointments)
 $servicesData = [];
-$serviceQuery = "SELECT ds.service_name, COUNT(a.id) AS total 
-                 FROM department_services ds
-                 LEFT JOIN appointments a ON ds.id = a.service_id
-                 WHERE ds.department_id = $departmentId
-                 GROUP BY ds.service_name";
-$res = $conn->query($serviceQuery);
-while ($row = $res->fetch_assoc()) {
+$svc = $pdo->prepare("
+    SELECT ds.service_name, COUNT(a.id) AS total
+    FROM department_services ds
+    LEFT JOIN appointments a 
+        ON a.service_id = ds.id AND a.department_id = ds.department_id
+    WHERE ds.department_id = ?
+    GROUP BY ds.id, ds.service_name
+    ORDER BY ds.service_name ASC
+");
+$svc->execute([$departmentId]);
+foreach ($svc->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $servicesData[$row['service_name']] = (int)$row['total'];
 }
 
-// Gender distribution
+// 4) Gender distribution (residents on appointments in this department)
 $genderData = [];
-$genderQuery = "SELECT u.sex, COUNT(*) AS total
-                FROM users u
-                JOIN appointments a ON u.id = a.user_id
-                WHERE a.department_id = $departmentId AND u.sex IS NOT NULL
-                GROUP BY u.sex";
-$res = $conn->query($genderQuery);
-while ($row = $res->fetch_assoc()) {
+$g = $pdo->prepare("
+    SELECT r.sex, COUNT(*) AS total
+    FROM appointments a
+    JOIN residents r ON r.id = a.resident_id
+    WHERE a.department_id = ? AND r.sex IS NOT NULL AND r.sex <> ''
+    GROUP BY r.sex
+");
+$g->execute([$departmentId]);
+foreach ($g->fetchAll(PDO::FETCH_ASSOC) as $row) {
     $genderData[$row['sex']] = (int)$row['total'];
 }
 
-// Slots (AM/PM booked by weekday)
+// 5) Slots (AM/PM booked by weekday, Mon–Fri) from available_dates.date_time
 $slotData = [
-    "dates" => ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-    "am" => [],
-    "pm" => []
+    'dates' => ['Monday','Tuesday','Wednesday','Thursday','Friday'],
+    'am' => [0,0,0,0,0],
+    'pm' => [0,0,0,0,0]
 ];
-
-$weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-foreach ($weekdays as $day) {
-    $query = "SELECT 
-                SUM(am_booked) as am_total, 
-                SUM(pm_booked) as pm_total 
-              FROM available_dates 
-              WHERE DAYNAME(date_time) = '$day' AND department_id = $departmentId";
-    $res = $conn->query($query);
-    $row = $res->fetch_assoc();
-    $slotData['am'][] = (int) $row['am_total'];
-    $slotData['pm'][] = (int) $row['pm_total'];
+$slots = $pdo->prepare("
+    SELECT DAYNAME(date_time) as dname, SUM(am_booked) am_total, SUM(pm_booked) pm_total
+    FROM available_dates
+    WHERE department_id = ?
+    GROUP BY DAYNAME(date_time)
+");
+$slots->execute([$departmentId]);
+$byName = [];
+foreach ($slots->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $byName[$row['dname']] = ['am' => (int)$row['am_total'], 'pm' => (int)$row['pm_total']];
+}
+foreach ($slotData['dates'] as $i => $day) {
+    if (isset($byName[$day])) {
+        $slotData['am'][$i] = $byName[$day]['am'];
+        $slotData['pm'][$i] = $byName[$day]['pm'];
+    }
 }
 
+// 6) Monthly appointments (current year)
 $monthlyAppointments = array_fill(1, 12, 0);
-$monthlyQuery = "SELECT MONTH(scheduled_for) as month, COUNT(*) as count
-                 FROM appointments 
-                 WHERE department_id = $departmentId AND YEAR(scheduled_for) = YEAR(CURDATE())
-                 GROUP BY MONTH(scheduled_for)";
-$res = $conn->query($monthlyQuery);
-while ($row = $res->fetch_assoc()) {
-    $monthlyAppointments[(int)$row['month']] = (int)$row['count'];
+$m = $pdo->prepare("
+    SELECT MONTH(scheduled_for) AS m, COUNT(*) AS c
+    FROM appointments
+    WHERE department_id = ? AND scheduled_for IS NOT NULL AND YEAR(scheduled_for) = YEAR(CURDATE())
+    GROUP BY MONTH(scheduled_for)
+");
+$m->execute([$departmentId]);
+foreach ($m->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    $monthlyAppointments[(int)$row['m']] = (int)$row['c'];
 }
-$monthLabels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+$monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+// 7) Peak booking totals
+$p = $pdo->prepare("
+    SELECT COALESCE(SUM(am_booked),0) am_total, COALESCE(SUM(pm_booked),0) pm_total
+    FROM available_dates
+    WHERE department_id = ?
+");
+$p->execute([$departmentId]);
+$peak = $p->fetch(PDO::FETCH_ASSOC) ?: ['am_total'=>0,'pm_total'=>0];
+$amTotal = (int)$peak['am_total'];
+$pmTotal = (int)$peak['pm_total'];
+
+// 8) Feedback density per department (Admin-only optional)
 $feedbackAverages = [];
-$feedbackQuery = "SELECT d.name, COUNT(f.id) / COUNT(DISTINCT a.id) as avg_feedback
-                  FROM departments d
-                  LEFT JOIN appointments a ON a.department_id = d.id
-                  LEFT JOIN feedback f ON f.appointment_id = a.id
-                  GROUP BY d.name";
-$res = $conn->query($feedbackQuery);
-while ($row = $res->fetch_assoc()) {
-    $feedbackAverages[$row['name']] = round($row['avg_feedback'], 2);
+if ($role === 'Admin') {
+    $f = $pdo->query("
+        SELECT d.name,
+               (COUNT(f.id) / NULLIF(COUNT(DISTINCT a.id),0)) AS avg_feedback
+        FROM departments d
+        LEFT JOIN appointments a ON a.department_id = d.id
+        LEFT JOIN feedback f ON f.appointment_id = a.id
+        GROUP BY d.id, d.name
+        ORDER BY d.name
+    ");
+    foreach ($f->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $feedbackAverages[$row['name']] = round((float)$row['avg_feedback'], 3);
+    }
 }
-
-$peakQuery = "SELECT SUM(am_booked) as am_total, SUM(pm_booked) as pm_total
-              FROM available_dates
-              WHERE department_id = $departmentId";
-$res = $conn->query($peakQuery);
-$peakData = $res->fetch_assoc();
-$amTotal = (int)$peakData['am_total'];
-$pmTotal = (int)$peakData['pm_total'];
-
-
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>LGU Personnel Dashboard</title>
+  <title>LGU Personnel Analytics</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
@@ -132,202 +155,145 @@ $pmTotal = (int)$peakData['pm_total'];
 <div class="container my-4">
   <h2 class="mb-4 text-center text-primary d-flex align-items-center justify-content-center" style="gap: 10px; font-weight: 600; font-size: 2rem;">
     <i class='bx bxs-dashboard bx-tada' style="font-size: 2.5rem;"></i>
-    LGU Personnel Dashboard
+    LGU Personnel Analytics
   </h2>
 
-  <!-- Cards -->
+  <?php if ($departmentId === 0): ?>
+    <div class="alert alert-warning">Your personnel account is not linked to a department yet. Please contact the admin.</div>
+  <?php endif; ?>
+
   <div class="row text-center">
-  <!-- Total Appointments -->
-  <div class="col-md-4 mb-3">
-    <div class="card py-3 px-2 d-flex align-items-center">
-      <i class='bx bx-calendar text-primary' style="font-size: 2rem;"></i>
-      <h6 class="mt-2 mb-1">Total Appointments</h6>
-      <p class="h4 mb-0"><?= $totalAppointments ?></p>
+    <div class="col-md-4 mb-3">
+      <div class="card py-3 px-2 d-flex align-items-center">
+        <i class='bx bx-calendar text-primary' style="font-size: 2rem;"></i>
+        <h6 class="mt-2 mb-1">Total Appointments</h6>
+        <p class="h4 mb-0"><?php echo $totalAppointments; ?></p>
+      </div>
     </div>
-  </div>
 
-  <!-- Pending Appointments -->
-  <div class="col-md-4 mb-3">
-    <div class="card py-3 px-2 d-flex align-items-center">
-      <i class='bx bx-time text-warning' style="font-size: 2rem;"></i>
-      <h6 class="mt-2 mb-1">Pending</h6>
-      <p class="h4 text-warning mb-0"><?= $pendingAppointments ?></p>
+    <div class="col-md-4 mb-3">
+      <div class="card py-3 px-2 d-flex align-items-center">
+        <i class='bx bx-time text-warning' style="font-size: 2rem;"></i>
+        <h6 class="mt-2 mb-1">Pending</h6>
+        <p class="h4 text-warning mb-0"><?php echo $pendingAppointments; ?></p>
+      </div>
     </div>
-  </div>
 
-  <!-- Completed Appointments -->
-  <div class="col-md-4 mb-3">
-    <div class="card py-3 px-2 d-flex align-items-center">
-      <i class='bx bx-check-circle text-success' style="font-size: 2rem;"></i>
-      <h6 class="mt-2 mb-1">Completed</h6>
-      <p class="h4 text-success mb-0"><?= $completedAppointments ?></p>
+    <div class="col-md-4 mb-3">
+      <div class="card py-3 px-2 d-flex align-items-center">
+        <i class='bx bx-check-circle text-success' style="font-size: 2rem;"></i>
+        <h6 class="mt-2 mb-1">Completed</h6>
+        <p class="h4 text-success mb-0"><?php echo $completedAppointments; ?></p>
+      </div>
     </div>
   </div>
-</div>
 
   <div class="row">
-  <!-- Monthly Appointments -->
-  <div class="col-md-6 mb-4">
-    <div class="chart-container">
-      <canvas id="monthlyChart"></canvas>
+    <div class="col-md-6 mb-4">
+      <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+      </div>
     </div>
-  </div>
 
-
-  <!-- Services Chart -->
-  <div class="col-md-6 mb-4">
-    <div class="chart-container">
-      <canvas id="servicesChart"></canvas>
+    <div class="col-md-6 mb-4">
+      <div class="chart-container">
+        <canvas id="servicesChart"></canvas>
+      </div>
     </div>
-  </div>
 
-  <!-- Peak Booking -->
-  <div class="col-md-6 mb-4">
-    <div class="chart-container">
-      <canvas id="peakChart"></canvas>
+    <div class="col-md-6 mb-4">
+      <div class="chart-container">
+        <canvas id="peakChart"></canvas>
+      </div>
     </div>
-  </div>
 
-
-  <!-- Gender Chart -->
-  <div class="col-md-6 mb-4">
-    <div class="chart-container">
-      <canvas id="genderChart"></canvas>
+    <div class="col-md-6 mb-4">
+      <div class="chart-container">
+        <canvas id="genderChart"></canvas>
+      </div>
     </div>
-  </div>
 
-  <!-- AM/PM Slot Chart (Full width optional) -->
-  <div class="col-12 mb-4">
-    <div class="chart-container">
-      <canvas id="slotChart"></canvas>
+    <div class="col-12 mb-4">
+      <div class="chart-container">
+        <canvas id="slotChart"></canvas>
+      </div>
     </div>
-  </div>
 
-  <!-- Feedback Chart (Admin Only) -->
-  <?php if ($_SESSION['role'] === 'Admin'): ?>
-  <div class="col-md-6 mb-4">
-    <div class="chart-container">
-      <canvas id="feedbackChart"></canvas>
+    <?php if ($role === 'Admin'): ?>
+    <div class="col-md-6 mb-4">
+      <div class="chart-container">
+        <canvas id="feedbackChart"></canvas>
+      </div>
     </div>
+    <?php endif; ?>
   </div>
-  <?php endif; ?>
 </div>
 
-
-
 <script>
-  // Services Chart
+  const servicesData = <?php echo json_encode($servicesData); ?>;
+  const genderData = <?php echo json_encode($genderData); ?>;
+  const slotData = <?php echo json_encode($slotData); ?>;
+  const monthlyData = <?php echo json_encode(array_values($monthlyAppointments)); ?>;
+  const monthLabels = <?php echo json_encode($monthLabels); ?>;
+  const feedbackData = <?php echo json_encode($feedbackAverages); ?>;
+
   new Chart(document.getElementById('servicesChart'), {
     type: 'bar',
     data: {
-      labels: <?= json_encode(array_keys($servicesData)) ?>,
-      datasets: [{
-        label: 'Appointments',
-        data: <?= json_encode(array_values($servicesData)) ?>,
-        backgroundColor: '#5a5cb7'
-      }]
+      labels: Object.keys(servicesData),
+      datasets: [{ label: 'Appointments', data: Object.values(servicesData) }]
     },
-    options: {
-      responsive: true,
-      title: { display: true, text: 'Appointments by Service' }
-    }
+    options: { responsive: true, plugins: { title: { display: true, text: 'Appointments by Service' } } }
   });
 
-  // Gender Chart
   new Chart(document.getElementById('genderChart'), {
     type: 'pie',
     data: {
-      labels: <?= json_encode(array_keys($genderData)) ?>,
-      datasets: [{
-        data: <?= json_encode(array_values($genderData)) ?>,
-        backgroundColor: ['#007bff', '#ff6384']
-      }]
+      labels: Object.keys(genderData),
+      datasets: [{ data: Object.values(genderData) }]
     },
-    options: {
-      responsive: true,
-      title: { display: true, text: 'Gender Distribution' }
-    }
+    options: { responsive: true, plugins: { title: { display: true, text: 'Gender Distribution' } } }
   });
 
-  // Slot Chart
   new Chart(document.getElementById('slotChart'), {
     type: 'line',
     data: {
-      labels: <?= json_encode($slotData['dates']) ?>,
+      labels: slotData.dates,
       datasets: [
-        {
-          label: 'AM Booked',
-          data: <?= json_encode($slotData['am']) ?>,
-          borderColor: '#5a5cb7',
-          fill: false
-        },
-        {
-          label: 'PM Booked',
-          data: <?= json_encode($slotData['pm']) ?>,
-          borderColor: '#28a745',
-          fill: false
-        }
+        { label: 'AM Booked', data: slotData.am },
+        { label: 'PM Booked', data: slotData.pm }
       ]
     },
-    options: {
-      responsive: true,
-      title: { display: true, text: 'Slots Booked Over Days' }
-    }
-    
+    options: { responsive: true, plugins: { title: { display: true, text: 'Slots Booked Over Days' } } }
   });
 
   new Chart(document.getElementById('monthlyChart'), {
-  type: 'bar',
-  data: {
-    labels: <?= json_encode($monthLabels) ?>,
-    datasets: [{
-      label: 'Monthly Appointments',
-      data: <?= json_encode(array_values($monthlyAppointments)) ?>,
-      backgroundColor: '#17a2b8'
-    }]
-  },
-  options: {
-    responsive: true,
-    title: { display: true, text: 'Monthly Appointments (Current Year)' }
-  }
-});
+    type: 'bar',
+    data: { labels: monthLabels, datasets: [{ label: 'Monthly Appointments', data: monthlyData }] },
+    options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Appointments (Current Year)' } } }
+  });
 
-<?php if ($_SESSION['role'] === 'Admin'): ?>
-new Chart(document.getElementById('feedbackChart'), {
-  type: 'horizontalBar',
-  data: {
-    labels: <?= json_encode(array_keys($feedbackAverages)) ?>,
-    datasets: [{
-      label: 'Avg. Feedback per Appointment',
-      data: <?= json_encode(array_values($feedbackAverages)) ?>,
-      backgroundColor: '#ffc107'
-    }]
-  },
-  options: {
-    responsive: true,
-    title: { display: true, text: 'Feedback Average per Department' },
-    scales: {
-      x: { beginAtZero: true }
+  <?php if ($role === 'Admin'): ?>
+  new Chart(document.getElementById('feedbackChart'), {
+    type: 'bar',
+    data: { labels: Object.keys(feedbackData), datasets: [{ label: 'Feedback per Appointment', data: Object.values(feedbackData) }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { title: { display: true, text: 'Feedback Density per Department' } },
+      scales: { x: { beginAtZero: true } }
     }
-  }
-});
-<?php endif; ?>
+  });
+  <?php endif; ?>
 
-new Chart(document.getElementById('peakChart'), {
-  type: 'doughnut',
-  data: {
-    labels: ['AM Booked', 'PM Booked'],
-    datasets: [{
-      data: [<?= $amTotal ?>, <?= $pmTotal ?>],
-      backgroundColor: ['#007bff', '#28a745']
-    }]
-  },
-  options: {
-    responsive: true,
-    title: { display: true, text: 'Peak Booking Hours' }
-  }
-});
-
+  new Chart(document.getElementById('peakChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['AM Booked', 'PM Booked'],
+      datasets: [{ data: [<?php echo $amTotal; ?>, <?php echo $pmTotal; ?>] }]
+    },
+    options: { responsive: true, plugins: { title: { display: true, text: 'Peak Booking Hours' } } }
+  });
 </script>
 </body>
 </html>

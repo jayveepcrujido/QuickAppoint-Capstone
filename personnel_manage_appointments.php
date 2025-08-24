@@ -2,18 +2,37 @@
 session_start();
 include 'conn.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'LGU Personnel') {
+if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'LGU Personnel') {
     echo "<script>alert('Unauthorized access!'); window.location.href='login.php';</script>";
     exit();
 }
 
-// Get the logged-in personnel's department_id
-$stmt = $pdo->prepare("SELECT department_id FROM users WHERE id = ?");
-$stmt->execute([$_SESSION['user_id']]);
+// Get the logged-in personnel's department_id using auth_id
+$stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_id = ?");
+$stmt->execute([$_SESSION['auth_id']]);
 $department_id = $stmt->fetchColumn();
 
-// Get pending appointments with service name
-$appointments = $pdo->prepare("SELECT a.*, u.first_name, u.middle_name, u.last_name, u.address, u.birthday, u.age, u.sex, u.civil_status, auth.email, ds.service_name FROM appointments a JOIN users u ON a.user_id = u.id JOIN auth ON u.id = auth.user_id LEFT JOIN department_services ds ON a.service_id = ds.id WHERE a.department_id = ? AND a.status = 'Pending' ORDER BY a.scheduled_for ASC");
+if (!$department_id) {
+    echo "<script>alert('No department assigned to this personnel!'); window.location.href='login.php';</script>";
+    exit();
+}
+
+// Get pending appointments with resident + service info
+$query = "
+    SELECT 
+        a.*, 
+        r.first_name, r.middle_name, r.last_name, r.address, r.birthday, r.age, r.sex, r.civil_status, 
+        r.valid_id_image, r.selfie_image,
+        au.email, 
+        ds.service_name
+    FROM appointments a
+    JOIN residents r ON a.resident_id = r.id
+    JOIN auth au ON r.auth_id = au.id
+    LEFT JOIN department_services ds ON a.service_id = ds.id
+    WHERE a.department_id = ? AND a.status = 'Pending'
+    ORDER BY a.scheduled_for ASC
+";
+$appointments = $pdo->prepare($query);
 $appointments->execute([$department_id]);
 $appointmentData = $appointments->fetchAll(PDO::FETCH_ASSOC);
 ?>

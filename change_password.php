@@ -1,24 +1,42 @@
 <?php
 session_start();
-include 'conn.php';
+require_once 'conn.php';
 header('Content-Type: application/json');
 
-$data = $_POST;
-$stmt = $pdo->prepare("SELECT password FROM auth WHERE user_id=?");
-$stmt->execute([$data['user_id']]);
-$user = $stmt->fetch();
-
-if (!$user || !password_verify($data['current_password'], $user['password'])) {
-  echo json_encode(['status'=>'error','message'=>'Incorrect current password.']);
-  exit;
-}
-if ($data['new_password'] !== $data['confirm_password']) {
-  echo json_encode(['status'=>'error','message'=>'New passwords do not match.']);
-  exit;
+if (!isset($_SESSION['auth_id'])) {
+    echo json_encode(['status'=>'error','message'=>'Unauthorized']);
+    exit;
 }
 
-$newHash = password_hash($data['new_password'], PASSWORD_DEFAULT);
-$stmt = $pdo->prepare("UPDATE auth SET password=? WHERE user_id=?");
-$stmt->execute([$newHash, $data['user_id']]);
+$auth_id = (int)$_SESSION['auth_id'];
+$current = $_POST['current_password'] ?? '';
+$new     = $_POST['new_password'] ?? '';
+$confirm = $_POST['confirm_password'] ?? '';
 
-echo json_encode(['status'=>'success','message'=>'Password changed successfully.']);
+if ($current === '' || $new === '' || $confirm === '') {
+    echo json_encode(['status'=>'error','message'=>'All fields are required.']);
+    exit;
+}
+if ($new !== $confirm) {
+    echo json_encode(['status'=>'error','message'=>'New passwords do not match.']);
+    exit;
+}
+
+try {
+    $stmt = $pdo->prepare("SELECT password FROM auth WHERE id=?");
+    $stmt->execute([$auth_id]);
+    $row = $stmt->fetch();
+
+    if (!$row || !password_verify($current, $row['password'])) {
+        echo json_encode(['status'=>'error','message'=>'Incorrect current password.']);
+        exit;
+    }
+
+    $hash = password_hash($new, PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare("UPDATE auth SET password=? WHERE id=?");
+    $stmt->execute([$hash, $auth_id]);
+
+    echo json_encode(['status'=>'success','message'=>'Password changed successfully.']);
+} catch (Exception $e) {
+    echo json_encode(['status'=>'error','message'=>'Server error: '.$e->getMessage()]);
+}

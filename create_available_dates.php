@@ -2,8 +2,9 @@
 session_start();
 include 'conn.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'LGU Personnel') {
-    if ($_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+// Session check
+if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'LGU Personnel') {
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
         echo json_encode(['status' => 'error', 'message' => 'Unauthorized access.']);
         exit;
     } else {
@@ -12,26 +13,32 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'LGU Personnel') {
     }
 }
 
-$userId = $_SESSION['user_id'];
+$authId = $_SESSION['auth_id'];
+
+// Get personnel's department_id
 try {
-    $stmt = $pdo->prepare("SELECT department_id FROM users WHERE id = ?");
-    $stmt->execute([$userId]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$user || !$user['department_id']) {
+    $stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_id = ?");
+    $stmt->execute([$authId]);
+    $personnel = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$personnel || !$personnel['department_id']) {
         die("<div class='alert alert-danger'>Assigned department not found.</div>");
     }
-    $departmentId = $user['department_id'];
+
+    $departmentId = $personnel['department_id'];
 } catch (Exception $e) {
     die("<div class='alert alert-danger'>Error: " . htmlspecialchars($e->getMessage()) . "</div>");
 }
 
-// Handle POST
+// Handle POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['available_date'])) {
     try {
         $stmt = $pdo->prepare("
             INSERT INTO available_dates (department_id, date_time, status, created_at, am_slots, pm_slots)
             VALUES (?, ?, 'available', NOW(), ?, ?)
-            ON DUPLICATE KEY UPDATE am_slots = VALUES(am_slots), pm_slots = VALUES(pm_slots)
+            ON DUPLICATE KEY UPDATE 
+                am_slots = VALUES(am_slots), 
+                pm_slots = VALUES(pm_slots)
         ");
 
         foreach ($_POST['available_date'] as $date => $entry) {
@@ -52,7 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['available_date'])) {
 }
 
 // Fetch available dates
-$stmt = $pdo->prepare("SELECT date_time, DATE(date_time) as date, am_slots, pm_slots, am_booked, pm_booked FROM available_dates WHERE department_id = ?");
+$stmt = $pdo->prepare("
+    SELECT date_time, DATE(date_time) as date, am_slots, pm_slots, am_booked, pm_booked 
+    FROM available_dates 
+    WHERE department_id = ?
+");
 $stmt->execute([$departmentId]);
 
 $availableDates = [];
@@ -61,15 +72,14 @@ $existingDates = [];
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $date = $row['date'];
     $availableDates[$date] = [
-        'am_slots' => (int)$row['am_slots'],
-        'pm_slots' => (int)$row['pm_slots'],
-        'am_booked' => (int)$row['am_booked'],
-        'pm_booked' => (int)$row['pm_booked']
+        'am_slots'   => (int)$row['am_slots'],
+        'pm_slots'   => (int)$row['pm_slots'],
+        'am_booked'  => (int)$row['am_booked'],
+        'pm_booked'  => (int)$row['pm_booked']
     ];
     $existingDates[] = $date;
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">

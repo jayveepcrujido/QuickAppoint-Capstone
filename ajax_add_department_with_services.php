@@ -3,6 +3,7 @@
 include 'conn.php';
 
 $name = $_POST['name'] ?? '';
+$acronym = $_POST['acronym'] ?? null;
 $description = $_POST['description'] ?? '';
 $services = $_POST['services'] ?? [];
 $requirements = $_POST['requirements'] ?? [];
@@ -16,9 +17,9 @@ if (!$name || empty($services)) {
 try {
     $pdo->beginTransaction();
 
-    // Insert department
-    $stmt = $pdo->prepare("INSERT INTO departments (name, description) VALUES (?, ?)");
-    $stmt->execute([$name, $description]);
+    // Insert department with acronym
+    $stmt = $pdo->prepare("INSERT INTO departments (name, acronym, description) VALUES (?, ?, ?)");
+    $stmt->execute([$name, $acronym, $description]);
     $deptId = $pdo->lastInsertId();
 
     // Insert services and associated requirements

@@ -6,6 +6,7 @@ header('Content-Type: application/json');
 // Validate POST
 $deptId = $_POST['department_id'] ?? null;
 $name = trim($_POST['name'] ?? '');
+$acronym = trim($_POST['acronym'] ?? '');
 $description = trim($_POST['description'] ?? '');
 
 $serviceIds = $_POST['service_ids'] ?? [];
@@ -21,9 +22,9 @@ if (!$deptId || !$name || empty($serviceNames)) {
 try {
     $pdo->beginTransaction();
 
-    // Update department
-    $stmt = $pdo->prepare("UPDATE departments SET name = ?, description = ? WHERE id = ?");
-    $stmt->execute([$name, $description, $deptId]);
+    // Update department with acronym
+    $stmt = $pdo->prepare("UPDATE departments SET name = ?, acronym = ?, description = ? WHERE id = ?");
+    $stmt->execute([$name, $acronym, $description, $deptId]);
 
     // Update services
     foreach ($serviceNames as $index => $serviceName) {
@@ -64,10 +65,9 @@ try {
             }
         }
     }
-    
 
     $pdo->commit();
-        echo json_encode(['status' => 'success']);
+    echo json_encode(['status' => 'success']);
     exit;
 
 } catch (Exception $e) {

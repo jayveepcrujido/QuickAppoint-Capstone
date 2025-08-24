@@ -10,25 +10,47 @@ try {
     }
 
     // Get inputs
-    $first_name = $_POST['first_name'];
-    $middle_name = $_POST['middle_name'];
-    $last_name = $_POST['last_name'];
-    $department_id = $_POST['department_id'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    $first_name   = trim($_POST['first_name'] ?? '');
+    $middle_name  = trim($_POST['middle_name'] ?? '');
+    $last_name    = trim($_POST['last_name'] ?? '');
+    $department_id = $_POST['department_id'] ?? '';
+    $email        = trim($_POST['email'] ?? '');
+    $password     = $_POST['password'] ?? '';
 
-    // Insert into users
-    $stmt = $pdo->prepare("INSERT INTO users (first_name, middle_name, last_name, department_id) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$first_name, $middle_name, $last_name, $department_id]);
-    $user_id = $pdo->lastInsertId();
+    if (!$first_name || !$last_name || !$email || !$password || !$department_id) {
+        http_response_code(400);
+        echo "All required fields must be filled.";
+        exit;
+    }
 
-    // Insert into auth
-    $stmt = $pdo->prepare("INSERT INTO auth (user_id, email, password, role) VALUES (?, ?, ?, 'LGU Personnel')");
-    $stmt->execute([$user_id, $email, $hashedPassword]);
+    // Check duplicate email
+    $check = $pdo->prepare("SELECT id FROM auth WHERE email = ?");
+    $check->execute([$email]);
+    if ($check->fetch()) {
+        http_response_code(400);
+        echo "Email already exists.";
+        exit;
+    }
 
+    $pdo->beginTransaction();
+
+    // Insert into auth first
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare("INSERT INTO auth (email, password, role) VALUES (?, ?, 'LGU Personnel')");
+    $stmt->execute([$email, $hashedPassword]);
+    $authId = $pdo->lastInsertId();
+
+    // Insert into lgu_personnel
+    $stmt = $pdo->prepare("
+        INSERT INTO lgu_personnel (auth_id, first_name, middle_name, last_name, department_id)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    $stmt->execute([$authId, $first_name, $middle_name, $last_name, $department_id]);
+
+    $pdo->commit();
     echo "LGU Personnel created successfully.";
-} catch (PDOException $e) {
+} catch (Exception $e) {
+    $pdo->rollBack();
     http_response_code(500);
     echo "Database Error: " . $e->getMessage();
 }

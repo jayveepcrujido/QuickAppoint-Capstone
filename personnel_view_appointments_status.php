@@ -1,17 +1,15 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'LGU Personnel') {
+if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'LGU Personnel') {
     header("Location: login.php");
     exit();
 }
 
 include 'conn.php';
 
-$personnelId = $_SESSION['user_id'];
-
-// Get personnel department
-$stmt = $pdo->prepare("SELECT department_id FROM users WHERE id = ?");
-$stmt->execute([$personnelId]);
+// Get personnel department using auth_id
+$stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_id = ?");
+$stmt->execute([$_SESSION['auth_id']]);
 $personnel = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$personnel) {
@@ -21,12 +19,12 @@ if (!$personnel) {
 
 $departmentId = $personnel['department_id'];
 
-// Fetch appointments with status
+// Fetch appointments with resident info
 $stmt = $pdo->prepare("
     SELECT a.id, a.status, a.scheduled_for, a.reason, a.requested_at,
-           u.first_name, u.last_name
+           r.first_name, r.last_name
     FROM appointments a
-    JOIN users u ON a.user_id = u.id
+    JOIN residents r ON a.resident_id = r.id
     WHERE a.department_id = ?
     ORDER BY a.scheduled_for DESC
 ");
@@ -38,7 +36,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Completed Appointments</title>
+    <title>Appointments Status</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="p-4">
@@ -65,19 +63,18 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <tr class="text-center">
                                     <td><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?></td>
                                     <td><?= htmlspecialchars($row['reason'] ?? 'N/A') ?></td>
-                                    <td><?= date('F j, Y • g:i A', strtotime($row['scheduled_for'] ?? '')) ?></td>
+                                    <td>
+                                        <?= $row['scheduled_for'] 
+                                            ? date('F j, Y • g:i A', strtotime($row['scheduled_for'])) 
+                                            : 'Not Scheduled'; ?>
+                                    </td>
                                     <td>
                                         <?php
                                             $status = htmlspecialchars($row['status']);
-                                            $badgeClass = match($status) {
-                                                'Pending' => 'warning',
-                                                'Approved' => 'primary',
-                                                'Declined' => 'danger',
-                                                'Completed' => 'success',
-                                                default => 'secondary'
-                                            };
+                                            $badgeClass = $status === 'Pending' ? 'warning' : 
+                                                          ($status === 'Completed' ? 'success' : 'secondary');
                                         ?>
-                                        <span class="badge bg-<?= $badgeClass ?>"><?= $status ?></span>
+                                        <span class="badge badge-<?= $badgeClass ?>"><?= $status ?></span>
                                     </td>
                                     <td><?= date('M d, Y g:i A', strtotime($row['requested_at'])) ?></td>
                                 </tr>
