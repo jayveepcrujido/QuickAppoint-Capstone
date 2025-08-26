@@ -3,13 +3,12 @@ session_start();
 include 'conn.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Step 1: Collect form inputs
     $first_name     = $_POST['first_name'];
     $middle_name    = $_POST['middle_name'];
     $last_name      = $_POST['last_name'];
     $email          = $_POST['email'];
     $password       = password_hash($_POST['password'], PASSWORD_BCRYPT);
-    $role           = 'Resident'; // New schema uses singular
+    $role           = 'Resident';
 
     $address        = $_POST['address'];
     $birthday       = $_POST['birthday'];
@@ -18,7 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $civil_status   = $_POST['civil_status'];
     $valid_id_type  = $_POST['valid_id_type'];
 
-    // Handle file uploads
     $uploadDir = 'uploads/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
@@ -31,10 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     move_uploaded_file($_FILES['selfie_image']['tmp_name'], $selfie_image_path);
 
     try {
-        // Step 2: Begin transaction
         $pdo->beginTransaction();
 
-        // Step 3: Insert into auth (credentials first)
         $authStmt = $pdo->prepare("
             INSERT INTO auth (email, password, role)
             VALUES (:email, :password, :role)
@@ -46,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         $auth_id = $pdo->lastInsertId();
 
-        // Step 4: Insert into residents (personal info linked with auth_id)
         $residentStmt = $pdo->prepare("
             INSERT INTO residents (
                 auth_id, first_name, middle_name, last_name,
@@ -73,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'selfie_image'   => $selfie_image_path
         ]);
 
-        // Step 5: Commit transaction
         $pdo->commit();
 
         echo "<script>alert('Registration successful!'); window.location.href='login.php';</script>";
@@ -94,146 +88,157 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <style>
     body {
       background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)),
-        url('images/LGU_Unisan.jpg  ') no-repeat center center/cover;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
+        url('assets/images/LGU_Unisan.jpg') no-repeat center center/cover;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
     }
 
     .register-container {
-      margin: 2rem auto;
+      margin: auto;
       padding: 2rem;
-      border-radius: 10px;
-      background: white;
-      max-width: 1000px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 15px;
+      background: #fff;
+      max-width: 850px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
 
     .register-container h2 {
       text-align: center;
-      font-weight: bold;
-      color: #5a5cb7;
+      font-weight: 700;
+      color: #27548A;
       margin-bottom: 1.5rem;
     }
 
     .form-control {
-      border-radius: 20px;
-      padding: 10px 15px;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
     }
 
     .btn-primary {
-      background-color: #007bff;
-      border-color: #007bff;
-      border-radius: 20px;
-      margin-top: 1.5rem;
+      background-color: #27548A;
+      border: none;
+      border-radius: 10px;
+      margin-top: 1rem;
       padding: 10px;
-      width: 100%;
+      font-weight: bold;
+      font-size: 15px;
+      transition: 0.3s;
     }
 
     .btn-primary:hover {
-      background-color: #0056b3;
-      border-color: #0056b3;
+      background-color: #1b3b61;
     }
 
     .login-link {
       text-align: center;
       display: block;
       margin-top: 1rem;
+      font-size: 14px;
     }
 
     @media (max-width: 768px) {
-      .col-md-6 {
-        margin-bottom: 1rem;
+      .register-container {
+        padding: 1.5rem;
       }
+      .form-control {
+        font-size: 13px;
+        padding: 7px 10px;
+      }
+      
     }
   </style>
 </head>
 <body>
-  <div class="container-fluid">
-    <div class="register-container">
-      <h2>Register for LGU QuickAppoint</h2>
-      <form method="POST" enctype="multipart/form-data">
-        <div class="row">
-          <!-- Left Column -->
-          <div class="col-md-6">
-            <div class="form-group">
-              <label for="first_name">First Name</label>
-              <input type="text" name="first_name" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="middle_name">Middle Name</label>
-              <input type="text" name="middle_name" class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="last_name">Last Name</label>
-              <input type="text" name="last_name" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="address">Address</label>
-              <input type="text" name="address" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label for="birthday">Birthday</label>
-            <input type="date" name="birthday" id="birthday" class="form-control" required>
-            </div>
-            <div class="form-group">
-            <label for="age">Age</label>
-                <input type="number" name="age" id="age" class="form-control" readonly required>
-            </div>
+  <div class="register-container">
+    <h2>Register for LGU QuickAppoint</h2>
+    <form method="POST" enctype="multipart/form-data">
+      <div class="row">
+        <!-- Left Column -->
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="first_name">First Name</label>
+            <input type="text" name="first_name" class="form-control" required>
           </div>
-
-          <!-- Right Column -->
-          <div class="col-md-6">
-            <div class="form-group">
-              <label for="sex">Sex</label>
-              <select name="sex" class="form-control" required>
-                <option value="">Select</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="civil_status">Civil Status</label>
-              <select name="civil_status" class="form-control" required>
-                <option value="">Select</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" name="email" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="password">Password</label>
-              <input type="password" name="password" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="valid_id_type">Valid ID Type</label>
-              <select name="valid_id_type" class="form-control" required>
-                <option value="">Select ID Type</option>
-                <option value="PhilSys ID">PhilSys ID</option>
-                <option value="TIN ID">TIN ID</option>
-                <option value="PhilHealth ID">PhilHealth ID</option>
-                <option value="Driver's License">Driver's License</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="valid_id_image">Upload Valid ID</label>
-              <input type="file" name="valid_id_image" class="form-control-file" accept="image/*" required>
-            </div>
-            <div class="form-group">
-              <label for="selfie_image">Upload Selfie</label>
-              <input type="file" name="selfie_image" class="form-control-file" accept="image/*" required>
-            </div>
+          <div class="form-group">
+            <label for="middle_name">Middle Name</label>
+            <input type="text" name="middle_name" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="last_name">Last Name</label>
+            <input type="text" name="last_name" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="address">Address</label>
+            <input type="text" name="address" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="birthday">Birthday</label>
+            <input type="date" name="birthday" id="birthday" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" name="age" id="age" class="form-control" readonly required>
           </div>
         </div>
-        <button type="submit" class="btn btn-primary">Register</button>
-        <a href="login.php" class="login-link">Already have an account? Login Here</a>
-      </form>
-    </div>
+
+        <!-- Right Column -->
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="sex">Sex</label>
+            <select name="sex" class="form-control" required>
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="civil_status">Civil Status</label>
+            <select name="civil_status" class="form-control" required>
+              <option value="">Select</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="valid_id_type">Valid ID Type</label>
+            <select name="valid_id_type" class="form-control" required>
+              <option value="">Select ID Type</option>
+              <option value="PhilSys ID">PhilSys ID</option>
+              <option value="TIN ID">TIN ID</option>
+              <option value="PhilHealth ID">PhilHealth ID</option>
+              <option value="Driver's License">Driver's License</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="valid_id_image">Upload Valid ID</label>
+            <input type="file" name="valid_id_image" class="form-control-file" accept="image/*" required>
+          </div>
+          <div class="form-group">
+            <label for="selfie_image">Upload Selfie</label>
+            <input type="file" name="selfie_image" class="form-control-file" accept="image/*" required>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Register</button>
+      <a href="login.php" class="login-link">Already have an account? Login Here</a>
+    </form>
   </div>
+
   <script>
     document.getElementById('birthday').addEventListener('change', function () {
         const birthDate = new Date(this.value);
@@ -243,15 +248,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const dayDiff = today.getDate() - birthDate.getDate();
 
         if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-        age--;
+          age--;
         }
 
         if (!isNaN(age)) {
-        document.getElementById('age').value = age;
+          document.getElementById('age').value = age;
         } else {
-        document.getElementById('age').value = '';
+          document.getElementById('age').value = '';
         }
     });
-</script>
+  </script>
 </body>
 </html>

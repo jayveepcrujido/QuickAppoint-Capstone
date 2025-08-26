@@ -69,24 +69,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Redirect to the correct dashboard
                 switch ($auth['role']) {
                     case 'Admin':
-                        header('Location: admin_dashboard.php');
+                        header('Location: admin/admin_dashboard.php');
                         break;
                     case 'LGU Personnel':
-                        header('Location: personnel_dashboard.php');
+                        header('Location: personnel/personnel_dashboard.php');
                         break;
                     case 'Resident':
-                        header('Location: residents_dashboard.php');
+                        header('Location: resident/residents_dashboard.php');
                         break;
                 }
                 exit();
             } else {
-                echo "<script>alert('Profile not found for this user!');</script>";
+            echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Profile Not Found',
+                    text: 'We couldn\\'t locate a profile for this account.',
+                    width: '300px',  // smaller popup
+                    confirmButtonText: 'Okay',
+                    confirmButtonColor: '#f39c12', // orange/yellow button
+                    customClass: {
+                        popup: 'my-popup',
+                        confirmButton: 'my-confirm'
+                    }
+                });
+            });
+            </script>";
             }
         } else {
-            echo "<script>alert('Invalid password!');</script>";
+            echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Password',
+                    text: 'Please try again.',
+                    width: '300px', // smaller popup
+                    confirmButtonText: 'Okay',
+                    confirmButtonColor: '#e74c3c', // red button
+                    customClass: {
+                        popup: 'my-popup',
+                        confirmButton: 'my-confirm'
+                    }
+                });
+            });
+            </script>";
         }
     } else {
-        echo "<script>alert('Account not found!');</script>";
+        echo "<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Account Not Found',
+                text: 'Please register first or check your email.',
+                width: '300px',  // smaller popup
+                confirmButtonText: 'Got it',
+                confirmButtonColor: '#3498db', // blue button
+                customClass: {
+                    popup: 'my-popup',
+                    confirmButton: 'my-confirm'
+                }
+            });
+        });
+        </script>";
     }
 }
 ?>
@@ -106,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             align-items: center;
             background: linear-gradient(rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.8)),
-                url('images/LGU_Unisan.jpg') no-repeat center center/cover;
+                url('assets/images/LGU_Unisan.jpg') no-repeat center center/cover;
             margin: 0;
         }
 
@@ -188,14 +233,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-group {
         position: relative;
-    }
+        }
+        @media (max-width: 480px) {
+        .login-container {
+            padding: 20px;
+            max-width: 90%;
+        }
+        }
+            .my-popup {
+            font-size: 14px !important;  /* smaller text */
+            padding: 10px !important;
+        }
+
+        .my-confirm {
+            font-size: 12px !important;   /* smaller button text */
+            padding: 6px 12px !important; /* smaller button size */
+            border-radius: 6px !important;
+        }
     </style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </head>
 <body>
     <div class="login-container">
         <!-- Logo and Header -->
         <div class="login-logo">
-            <img src="images/logo.png" style="width: 80px; height: 80px;" alt="Logo">
+            <img src="assets/images/logo.png" style="width: 80px; height: 80px;" alt="Logo">
         </div>
         <h2 style="color: #27548A;" >Login to LGU QuickAppoint</h2>
 
@@ -221,11 +284,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
     <script>
-        // Toggle Password Visibility
         function togglePassword() {
             const passwordInput = document.getElementById('password');
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
+            const icon = document.querySelector('.show-password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.textContent = '🙈'; // hide mode
+            } else {
+                passwordInput.type = 'password';
+                icon.textContent = '👁️'; // show mode
+            }
         }
     </script>
 </body>
