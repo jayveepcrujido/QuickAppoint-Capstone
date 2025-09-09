@@ -8,15 +8,27 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
 include '../conn.php';
 $authId = $_SESSION['auth_id'];
 
-// Fetch completed appointments
-$queryCompleted = "SELECT a.id, a.scheduled_for, d.name AS department_name, s.service_name
-                   FROM appointments a
-                   JOIN departments d ON a.department_id = d.id
-                   JOIN department_services s ON a.service_id = s.id
-                   WHERE a.id = :auth_id AND a.status = 'Completed'
-                   ORDER BY a.scheduled_for DESC";
+// ✅ Resolve resident_id from auth_id
+$stmt = $pdo->prepare("SELECT id FROM residents WHERE auth_id = ? LIMIT 1");
+$stmt->execute([$authId]);
+$resident = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$resident) {
+    die("Resident profile not found.");
+}
+$residentId = $resident['id'];
+
+// ✅ Fetch completed appointments
+$queryCompleted = "
+    SELECT a.id, a.scheduled_for, d.name AS department_name, s.service_name
+    FROM appointments a
+    JOIN departments d ON a.department_id = d.id
+    JOIN department_services s ON a.service_id = s.id
+    WHERE a.resident_id = :resident_id AND a.status = 'Completed'
+    ORDER BY a.scheduled_for DESC
+";
 $stmtCompleted = $pdo->prepare($queryCompleted);
-$stmtCompleted->execute(['auth_id' => $authId]);
+$stmtCompleted->execute(['resident_id' => $residentId]);
 $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -26,6 +38,7 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>My Completed Appointments</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body class="p-4">
 <div class="container mt-4">

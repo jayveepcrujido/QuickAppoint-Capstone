@@ -16,8 +16,8 @@ function sendResetEmail($recipientEmail, $recipientName, $resetLink) {
         $mail->SMTPAuth   = true;
 
         // CHANGE THESE TO YOUR GMAIL INFO
-        $mail->Username   = 'arjohn818@gmail.com';
-        $mail->Password   = 'ktnowevklszqcnkw'; // Google App Password
+        $mail->Username   = 'testtesttestter5@gmail.com';
+        $mail->Password   = 'gfar sqlp mgly afwj'; // Google App Password
         $mail->SMTPSecure = 'tls';
         $mail->Port       = 587;
 

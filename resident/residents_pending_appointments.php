@@ -8,15 +8,27 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
 include '../conn.php';
 $authId = $_SESSION['auth_id'];
 
-// Fetch pending appointments
-$queryAppointments = "SELECT a.id, a.scheduled_for, a.status, d.name AS department_name, s.service_name
-                      FROM appointments a
-                      JOIN departments d ON a.department_id = d.id
-                      JOIN department_services s ON a.service_id = s.id
-                      WHERE a.id = :auth_id AND a.status = 'Pending'
-                      ORDER BY a.scheduled_for ASC";
+// ✅ Get resident_id from auth_id
+$stmt = $pdo->prepare("SELECT id FROM residents WHERE auth_id = ? LIMIT 1");
+$stmt->execute([$authId]);
+$resident = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$resident) {
+    die("Resident profile not found.");
+}
+$residentId = $resident['id'];
+
+// ✅ Fetch pending appointments of this resident
+$queryAppointments = "
+    SELECT a.id, a.scheduled_for, a.status, d.name AS department_name, s.service_name
+    FROM appointments a
+    JOIN departments d ON a.department_id = d.id
+    JOIN department_services s ON a.service_id = s.id
+    WHERE a.resident_id = :resident_id AND a.status = 'Pending'
+    ORDER BY a.scheduled_for ASC
+";
 $stmt = $pdo->prepare($queryAppointments);
-$stmt->execute(['auth_id' => $authId]);
+$stmt->execute(['resident_id' => $residentId]);
 $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -26,6 +38,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>My Pending Appointments</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body class="p-4">
 <div class="container mt-4">
@@ -57,7 +70,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php foreach ($appointments as $index => $appt): ?>
                                 <tr>
                                     <td><?= $index + 1 ?></td>
-                                    <td><span class="badge badge-primary">Transation No. <?= htmlspecialchars($appt['id']) ?></span></td>
+                                    <td><span class="badge badge-primary">Transaction No. <?= htmlspecialchars($appt['id']) ?></span></td>
                                     <td><?= htmlspecialchars($appt['department_name']) ?></td>
                                     <td><?= htmlspecialchars($appt['service_name']) ?></td>
                                     <td>
@@ -88,15 +101,18 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </p>
                                                 <hr>
                                                 <?php
-                                                $matchQuery = "SELECT COUNT(*) AS total
-                                                               FROM appointments
-                                                               WHERE scheduled_for = :scheduled_for 
-                                                               AND user_id != :user_id
-                                                               AND status IN ('Pending', 'Confirmed')";
+                                                // ✅ Find how many other appointments share the same schedule
+                                                $matchQuery = "
+                                                    SELECT COUNT(*) AS total
+                                                    FROM appointments
+                                                    WHERE scheduled_for = :scheduled_for
+                                                    AND resident_id != :resident_id
+                                                    AND status IN ('Pending','Completed')
+                                                ";
                                                 $matchStmt = $pdo->prepare($matchQuery);
                                                 $matchStmt->execute([
                                                     'scheduled_for' => $appt['scheduled_for'],
-                                                    'user_id' => $userId
+                                                    'resident_id' => $residentId
                                                 ]);
                                                 $matchResult = $matchStmt->fetch();
                                                 ?>
@@ -115,7 +131,6 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
