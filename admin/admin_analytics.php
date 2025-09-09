@@ -17,7 +17,7 @@ if ($conn->connect_error) {
 }
 
 // Count registered residents (auth table tracks roles)
-$sql = "SELECT COUNT(*) AS resident_count FROM auth WHERE role = 'Residents'";
+$sql = "SELECT COUNT(*) AS resident_count FROM auth WHERE role = 'Resident'";
 $result = mysqli_query($conn, $sql);
 $residentCount = ($row = mysqli_fetch_assoc($result)) ? $row['resident_count'] : 0;
 
@@ -41,20 +41,19 @@ $sqlPending = "SELECT COUNT(*) AS pending_count FROM appointments WHERE status =
 $resultPending = mysqli_query($conn, $sqlPending);
 $pendingCount = ($rowPending = mysqli_fetch_assoc($resultPending)) ? $rowPending['pending_count'] : 0;
 
-// Department appointment counts
+// Department appointment counts (no departments table, so group by department_id)
 $dept_labels = [];
 $dept_counts = [];
 
 $sql = "
-    SELECT d.name AS department_name, COUNT(a.id) AS total_appointments
-    FROM departments d
-    LEFT JOIN appointments a ON a.department_id = d.id
-    GROUP BY d.id
-    ORDER BY d.name ASC;
+    SELECT department_id, COUNT(id) AS total_appointments
+    FROM appointments
+    GROUP BY department_id
+    ORDER BY department_id ASC;
 ";
 $result = mysqli_query($conn, $sql);
 while ($row = mysqli_fetch_assoc($result)) {
-    $dept_labels[] = $row['department_name'];
+    $dept_labels[] = "Department " . $row['department_id'];
     $dept_counts[] = $row['total_appointments'];
 }
 
@@ -80,8 +79,9 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Manage LGU Personnel</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 </head>
 <body>
   <h2 class="mb-4 text-center text-primary d-flex align-items-center justify-content-center" style="gap: 10px; font-weight: 600; font-size: 2rem;">
@@ -95,7 +95,7 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 <!-- Total Appointments -->
 <div class="col-md-4 mb-3">
 <div class="card shadow-sm border-left-primary p-3">
-<a href="#" class="text-dark" style="text-decoration: none; " onclick="loadContent('admin_view_appointments.php')">
+<a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_view_appointments.php')">
 <div class="d-flex justify-content-between align-items-center">
     <div>
     <h6>Total Appointments</h6>
@@ -109,11 +109,10 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 </div>
 </div>
 
-
 <!-- Registered Residents -->
 <div class="col-md-4 mb-3">
 <div class="card shadow-sm border-left-success p-3">
-<a href="#" class="text-dark" style="text-decoration: none; " onclick="loadContent('admin_manage_residents_accounts.php')">
+<a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_manage_residents_accounts.php')">
 <div class="d-flex justify-content-between align-items-center">
     <div>
     <h6>Registered Residents</h6>
@@ -130,7 +129,7 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 <!-- Feedback Entries -->
 <div class="col-md-4 mb-3">
 <div class="card shadow-sm border-left-warning p-3">
-<a href="#" class="text-dark" style="text-decoration: none; " onclick="loadContent('admin_view_feedback.php')">
+<a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_view_feedback.php')">
 <div class="d-flex justify-content-between align-items-center">
     <div>
     <h6>Total Feedbacks</h6>
@@ -140,8 +139,8 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
     </div>
     <i class='bx bx-message-square-dots bx-lg text-warning'></i>
 </div>
-</div>
 </a>
+</div>
 </div>
 
 </div>
@@ -167,10 +166,8 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 
 </div>
 </body>
-<!-- Chart.js Script -->
-<canvas id="monthChart" height="100"></canvas>
-<canvas id="deptChart" height="100"></canvas>
 
+<!-- Chart.js Script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   // Department-wise Appointments (Bar Chart)
@@ -194,9 +191,7 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
         scales: {
             y: {
             beginAtZero: true,
-            ticks: {
-                precision: 0
-            }
+            ticks: { precision: 0 }
             }
         }
         }
@@ -237,7 +232,7 @@ $monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
     .card:hover {
         transform: translateY(-5px) scale(1.02);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s ease; /* smooth effect */
+        transition: all 0.3s ease;
     }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>

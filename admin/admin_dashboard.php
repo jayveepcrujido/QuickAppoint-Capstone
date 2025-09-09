@@ -19,7 +19,7 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
     <link rel="stylesheet" href="../assets/css/admin.css">
 
     <script>
-            document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function () {
             const toggle = document.getElementById('header-toggle');
             const nav = document.getElementById('nav-bar');
             const overlay = document.getElementById('overlay');
@@ -53,45 +53,36 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
         function toggleDropdown(id) {
             $("#" + id).slideToggle("fast");
         }
-
-        // Profile dropdown toggle
-        $(document).ready(function(){
-            $('#profileDropdownToggle').click(function(e){
-                e.stopPropagation();
-                $('#profileDropdownMenu').toggleClass('show');
-            });
-
-            // Close dropdown if click outside
-            $(document).click(function(){
-                $('#profileDropdownMenu').removeClass('show');
-            });
-
-            $('#profileDropdownMenu').click(function(e){
-                e.stopPropagation(); // Prevent closing when clicking inside dropdown
-            });
-        });
-
-        function showLogoutModal() {
-            $('#logoutModal').modal('show');
-        }
     </script>
 </head>
 <body id="body-pd">
     <!-- Header -->
-    <header class="header" id="header">
-        <div class="header_toggle"> <i class='bx bx-menu' id="header-toggle"></i> </div>
+<!-- Header -->
+<header class="header" id="header">
+    <div class="header_toggle"> 
+        <i class='bx bx-menu' id="header-toggle"></i> 
+    </div>
 
-        <!-- Profile Dropdown -->
-        <div class="dropdown position-relative">
-            <i id="profileDropdownToggle" class='bx bx-user-circle text-primary' style="font-size: 40px; cursor:pointer;"></i>
-            <div id="profileDropdownMenu" class="dropdown-menu dropdown-menu-right">
-                <a href="#" class="dropdown-item" onclick="loadContent('../view_profile.php')"><i class='bx bx-id-card mr-2'></i> View Profile</a>
-                <a href="#" class="dropdown-item" onclick="loadContent('../profile.php')"><i class='bx bx-edit-alt mr-2'></i> Edit Profile</a>
-                <div class="dropdown-divider"></div>
-                <a href="#" class="dropdown-item text-danger" onclick="showLogoutModal()"><i class='bx bx-log-out-circle mr-2'></i> Logout</a>
-            </div>
+    <!-- Profile Dropdown (Bootstrap-native) -->
+    <div class="dropdown">
+        <a href="#" class="d-flex align-items-center text-decoration-none" id="profileDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class='bx bx-user-circle text-primary' style="font-size: 40px; cursor:pointer;"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="profileDropdown">
+            <a href="#" class="dropdown-item d-flex align-items-center" onclick="loadContent('../view_profile.php')">
+                <i class='bx bx-id-card mr-2'></i> View Profile
+            </a>
+            <a href="#" class="dropdown-item d-flex align-items-center" onclick="loadContent('../profile.php')">
+                <i class='bx bx-edit-alt mr-2'></i> Edit Profile
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item text-danger d-flex align-items-center" data-toggle="modal" data-target="#logoutModal">
+                <i class='bx bx-log-out-circle mr-2'></i> Logout
+            </a>
         </div>
-    </header>
+    </div>
+</header>
+
 
     <!-- Sidebar -->
     <div class="l-navbar" id="nav-bar">
@@ -110,7 +101,8 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
 
             <!-- Feedback dropdown -->
             <a href="javascript:void(0);" class="nav_link" onclick="toggleDropdown('feedbackDropdown')">
-                <i class='bx bx-message-rounded-dots'></i> <span>Select Feedback</span> <i class='bx bx-chevron-down ml-auto'></i>
+                <i class='bx bx-message-rounded-dots'></i> 
+                <span>Select Feedback</span> <i class='bx bx-chevron-down ml-auto'></i>
             </a>
             <div id="feedbackDropdown" class="dropdown-submenu" style="display:none;">
                 <a href="#" class="nav_link sub_link" onclick="loadContent('admin_view_feedback.php')">Service Feedback</a>
@@ -124,7 +116,7 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
             <a href="#" class="nav_link" onclick="loadContent('admin_manage_residents_accounts.php')">
                 <i class='bx bx-group'></i> <span>Manage Residents Accounts</span>
             </a>
-            <a href="#" class="nav_link" onclick="showLogoutModal()">
+            <a href="#" class="nav_link" data-toggle="modal" data-target="#logoutModal">
                 <i class='bx bx-log-out'></i> <span>Logout</span>
             </a>
         </nav>
@@ -134,112 +126,114 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
 
     <!-- Content Area -->
     <div class="content-area" id="content-area">
-    <div class="container mt-4">
-        <div class="card shadow-lg border-0 rounded-lg">
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0"><i class='bx bx-grid-alt'></i> Welcome, Admin!</h3>
-            </div>
-            <div class="card-body">
-                <p class="lead">
-                    <?php if (isset($_SESSION['user_name'])): ?>
-                        Hello, <strong><?php echo $_SESSION['user_name']; ?></strong>! You have administrative access.
-                    <?php else: ?>
-                        Hello, <strong>Admin</strong>! Welcome.
-                    <?php endif; ?>
-                </p>
-                <p>Use the sidebar to navigate through administrative features:</p>
+        <div class="container mt-4">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class='bx bx-grid-alt'></i> Welcome, Admin!</h3>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        <?php if (isset($_SESSION['user_name'])): ?>
+                            Hello, <strong><?php echo $_SESSION['user_name']; ?></strong>! You have administrative access.
+                        <?php else: ?>
+                            Hello, <strong>Admin</strong>! Welcome.
+                        <?php endif; ?>
+                    </p>
+                    <p>Use the sidebar to navigate through administrative features:</p>
 
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <div class="card h-100 shadow-sm border-dark p-3">
-                            <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_analytics.php')">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-grid-alt bx-lg text-dark me-3'></i>
-                                <div>
-                                <h5 class="mb-0">Dashboard</h5>
-                                <small>Return to the main admin overview</small>
-                                </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="card h-100 shadow-sm border-dark p-3">
+                                <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_analytics.php')">
+                                    <div class="d-flex align-items-center">
+                                        <i class='bx bx-grid-alt bx-lg text-dark me-3'></i>
+                                        <div>
+                                            <h5 class="mb-0">Dashboard</h5>
+                                            <small>Return to the main admin overview</small>
+                                        </div>
+                                    </div>
+                                </a>
                             </div>
-                            </a>
                         </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 shadow-sm border-left-primary p-3">
-                            <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_create_lgu_personnel.php')">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-user-plus bx-lg text-primary me-3'></i>
-                                <div>
-                                    <h5 class="mb-0">Create LGU Personnel</h5>
-                                    <small>Add new users with LGU Personnel role</small>
-                                </div>
-                            </div>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 shadow-sm border-left-success p-3">
-                            <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_manage_departments.php')">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-building-house bx-lg text-success me-3'></i>
-                                <div>
-                                    <h5 class="mb-0">Manage Departments</h5>
-                                    <small>Add, edit, or delete department records</small>
-                                </div>
-                            </div>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 shadow-sm border-left-warning p-3">
-                            <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_view_feedback.php')">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-message-rounded-dots bx-lg text-warning me-3'></i>
-                                <div>
-                                    <h5 class="mb-0">View Feedback</h5>
-                                    <small>Review feedback submitted by residents</small>
-                                </div>
-                            </div>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 shadow-sm border-left-danger p-3">
-                            <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_view_appointments.php')">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-calendar-event bx-lg text-danger me-3'></i>
-                                <div>
-                                    <h5 class="mb-0">View Appointments</h5>
-                                    <small>See all appointments and their statuses</small>
-                                </div>
-                            </div>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 shadow-sm border-left-info p-3">
-                            <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_manage_residents_accounts.php')">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-group bx-lg text-info me-3'></i>
-                                <div>
-                                    <h5 class="mb-0">Manage User Accounts</h5>
-                                    <small>View and manage all resident user accounts</small>
-                                </div>
-                            </div>
-                            </a>
-                        </div>
-                    </div>
                         <div class="col-md-6 mb-3">
-                        <div class="card h-100 shadow-sm border-left-secondary p-3 hover-card" onclick="window.location.href='../logout.php'" style="cursor:pointer;">
-                            <div class="d-flex align-items-center">
-                                <i class='bx bx-log-out bx-lg text-secondary me-3'></i>
-                                <div>
-                                    <h5 class="mb-0">Logout</h5>
-                                    <small>You can just click here to securely logout</small>
+                            <div class="card h-100 shadow-sm border-left-primary p-3">
+                                <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_create_lgu_personnel.php')">
+                                    <div class="d-flex align-items-center">
+                                        <i class='bx bx-user-plus bx-lg text-primary me-3'></i>
+                                        <div>
+                                            <h5 class="mb-0">Create LGU Personnel</h5>
+                                            <small>Add new users with LGU Personnel role</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 shadow-sm border-left-success p-3">
+                                <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_manage_departments.php')">
+                                    <div class="d-flex align-items-center">
+                                        <i class='bx bx-building-house bx-lg text-success me-3'></i>
+                                        <div>
+                                            <h5 class="mb-0">Manage Departments</h5>
+                                            <small>Add, edit, or delete department records</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 shadow-sm border-left-warning p-3">
+                                <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_view_feedback.php')">
+                                    <div class="d-flex align-items-center">
+                                        <i class='bx bx-message-rounded-dots bx-lg text-warning me-3'></i>
+                                        <div>
+                                            <h5 class="mb-0">View Feedback</h5>
+                                            <small>Review feedback submitted by residents</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 shadow-sm border-left-danger p-3">
+                                <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_view_appointments.php')">
+                                    <div class="d-flex align-items-center">
+                                        <i class='bx bx-calendar-event bx-lg text-danger me-3'></i>
+                                        <div>
+                                            <h5 class="mb-0">View Appointments</h5>
+                                            <small>See all appointments and their statuses</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 shadow-sm border-left-info p-3">
+                                <a href="#" class="text-dark" style="text-decoration: none;" onclick="loadContent('admin_manage_residents_accounts.php')">
+                                    <div class="d-flex align-items-center">
+                                        <i class='bx bx-group bx-lg text-info me-3'></i>
+                                        <div>
+                                            <h5 class="mb-0">Manage User Accounts</h5>
+                                            <small>View and manage all resident user accounts</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 shadow-sm border-left-secondary p-3 hover-card" 
+                                 data-toggle="modal" data-target="#logoutModal" style="cursor:pointer;">
+                                <div class="d-flex align-items-center">
+                                    <i class='bx bx-log-out bx-lg text-secondary me-3'></i>
+                                    <div>
+                                        <h5 class="mb-0">Logout</h5>
+                                        <small>Click here to securely logout</small>
+                                    </div>
                                 </div>
                             </div>
-                        </div>x
-                    </div>
-                </div> <!-- row -->
+                        </div>
+                    </div> <!-- row -->
+                </div>
             </div>
         </div>
     </div>
@@ -265,7 +259,6 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
         </div>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
