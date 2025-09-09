@@ -27,6 +27,7 @@ $personnel = $stmt->fetchAll();
 <head>
     <title>Manage LGU Personnel</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 <body class="p-4">
 <div class="container">
