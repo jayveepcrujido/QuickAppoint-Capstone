@@ -74,7 +74,6 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
         <div class="header_toggle"> <i class='bx bx-menu' id="header-toggle"></i> </div>
 
         <!-- Avatar icon for profile -->
-        <!-- Avatar icon for profile -->
         <div class="position-relative d-inline-block" style="z-index: 1050;">
         <!-- Profile Icon Trigger -->
         <div onclick="toggleProfileMenu()" title="My Profile" style="cursor: pointer;">

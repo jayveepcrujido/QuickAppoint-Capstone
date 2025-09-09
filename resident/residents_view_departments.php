@@ -130,6 +130,7 @@ foreach ($rawResults as $row) {
 
 
 <div class="container">
+    <div id="content-container" class="mt-4">
     <h3 class="mb-4">Departments</h3>
     <div class="input-group mb-4">
         <input type="text" class="form-control" id="searchInput" placeholder="Search department or service...">
@@ -141,21 +142,27 @@ foreach ($rawResults as $row) {
    <!-- HTML View -->
 <div class="row" id="departmentList">
     <?php foreach ($departments as $d): ?>
-        <div class="col-md-4 mb-3 department-card">
-            <div class="card h-100" data-toggle="modal" data-target="#deptModal<?= $d['id'] ?>">
-                <div class="card-body">
-                    <h5 class="card-title"><?= htmlspecialchars($d['name']) ?></h5>
-                    <p class="card-text"><?= htmlspecialchars($d['description']) ?></p>
-                    <div>
-                        <?php foreach ($d['services'] as $serviceName => $requirements): ?>
-                            <div class="mb-2">
-                                <span class="badge badge-info mb-1"><?= htmlspecialchars($serviceName) ?></span>
-                            </div>
-                        <?php endforeach; ?>
+    <div class="col-md-4 mb-3 department-card">
+<a href="javascript:void(0)" 
+   onclick="loadContent('resident_view_department_details.php?id=<?= urlencode($d['id']) ?>')" 
+   class="text-decoration-none text-reset">
+    <div class="card h-100 shadow-sm hover-card">
+        <div class="card-body">
+            <h5 class="card-title"><?= htmlspecialchars($d['name']) ?></h5>
+            <p class="card-text"><?= htmlspecialchars($d['description']) ?></p>
+            <div>
+                <?php foreach ($d['services'] as $serviceName => $requirements): ?>
+                    <div class="mb-2">
+                        <span class="badge badge-info mb-1"><?= htmlspecialchars($serviceName) ?></span>
                     </div>
-                </div>
+                <?php endforeach; ?>
             </div>
         </div>
+    </div>
+</a>
+
+    </div>
+
 
         <!-- Department Modal -->
         <div class="modal fade" id="deptModal<?= $d['id'] ?>" tabindex="-1" aria-hidden="true">
@@ -279,6 +286,7 @@ foreach ($rawResults as $row) {
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 let currentMonth = new Date().getMonth() + 1;
 let currentYear = new Date().getFullYear();
@@ -405,6 +413,20 @@ $('#clearSearch').click(function () {
     $('#searchInput').val('');
     $('.department-card').show();
 });
+
+
+function loadContent(url) {
+    // Show loading spinner
+    $("#content-container").html('<div class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2">Loading...</p></div>');
+
+    // Load the page into the container
+    $("#content-container").load(url, function(response, status, xhr) {
+        if (status == "error") {
+            $("#content-container").html('<div class="alert alert-danger">Failed to load content.</div>');
+        }
+    });
+}
+
 </script>
 </body>
 </html>
