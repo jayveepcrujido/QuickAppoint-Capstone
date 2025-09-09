@@ -47,20 +47,26 @@ while ($row = $stmt->fetch()) {
 </head>
 <body class="p-4">
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
-        <h3><i class='bx bx-buildings'></i> Manage Departments</h3>
-        <button class="btn btn-primary" data-toggle="modal" data-target="#addModal">
+     <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+        <h3 class="mb-0 text-primary">
+            <i class='bx bx-buildings'></i> Manage Departments
+        </h3>
+        <button class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#addModal">
             <i class='bx bx-plus'></i> Add Department
         </button>
     </div>
 
-    <div class="input-group mb-4">
+    <!-- Search -->
+    <div class="input-group mb-4 shadow-sm">
         <input type="text" class="form-control" id="searchInput" placeholder="Search department...">
         <div class="input-group-append">
-            <button class="btn btn-outline-secondary" id="clearFilters">Clear Filters</button>
+            <button class="btn btn-outline-secondary" id="clearFilters">
+                <i class="bx bx-x"></i> Clear
+            </button>
         </div>
     </div>
 
+    <!-- Department Cards -->
     <div class="row">
         <?php foreach ($departments as $d): 
             $searchText = strtolower($d['name'] . ' ' . $d['acronym'] . ' ' . $d['description'] . ' ' . $d['services']);
@@ -69,13 +75,22 @@ while ($row = $stmt->fetch()) {
         <div class="col-md-4 mb-4 dept-card" data-search="<?= htmlspecialchars($searchText) ?>">
             <div class="card h-100 shadow-sm border-0" data-toggle="modal" data-target="#viewModal<?= $d['id'] ?>">
                 <div class="card-body">
-                    <h5 class="card-title">
-                        <i class='bx bx-building-house'></i>
-                        <?= htmlspecialchars($d['acronym'] ? $d['acronym'] . ' - ' : '') ?><?= htmlspecialchars($d['name']) ?>
-                    </h5>
-                    <?php foreach ($services as $svc): ?>
-                        <span class="badge bg-info text-dark me-1 mb-1"><?= htmlspecialchars($svc) ?></span>
-                    <?php endforeach; ?>
+                    <h4 class="card-title mb-1 font-weight-bold">
+                        <i class='bx bx-building-house text-primary mr-1'></i>
+                        <?= htmlspecialchars($d['acronym']) ?>
+                    </h4>
+                    <small class="text-muted d-block mb-2">
+                        <?= htmlspecialchars($d['name']) ?>
+                    </small>
+                    <?php if ($services): ?>
+                        <div>
+                            <?php foreach ($services as $s): ?>
+                                <span class="badge badge-light border text-secondary mr-1 mb-1">
+                                    <?= htmlspecialchars($s) ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -86,12 +101,11 @@ while ($row = $stmt->fetch()) {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <?= htmlspecialchars($d['acronym'] ? $d['acronym'] . ' - ' : '') ?><?= htmlspecialchars($d['name']) ?>
+                            <?= htmlspecialchars($d['name']) ?>
                         </h5>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
                     <div class="modal-body">
-                        <p><strong>Acronym:</strong> <?= htmlspecialchars($d['acronym']) ?></p>
                         <p><strong>Description:</strong> <?= htmlspecialchars($d['description']) ?></p>
                         <p><strong>Services & Requirements:</strong></p>
                         <ul class="list-unstyled">

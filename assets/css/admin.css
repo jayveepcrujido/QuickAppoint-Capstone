@@ -270,5 +270,29 @@ transform: scale(1.2);
     color: #fff;
     opacity: 1;
 }
+/* Card Enhancements */
+.dept-card .card {
+    border-left: 6px solid #007bff; /* Bootstrap primary */
+    border-radius: 0.75rem;
+    transition: all 0.2s ease-in-out;
+}
+.dept-card .card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+}
+.dept-card h4 {
+    font-size: 1.2rem;
+    color: #343a40;
+}
+.dept-card small {
+    font-size: 0.9rem;
+}
 
+/* Search bar styling */
+#searchInput {
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+#clearFilters {
+    border-radius: 0 0.5rem 0.5rem 0;
+}
 /*  */
