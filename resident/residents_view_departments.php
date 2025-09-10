@@ -27,6 +27,7 @@ foreach ($rawResults as $row) {
         $departments[$deptId] = [
             'id' => $deptId,
             'name' => $row['name'],
+            'acronym' => $row['acronym'],
             'description' => $row['description'],
             'services' => []
         ];
@@ -146,20 +147,31 @@ foreach ($rawResults as $row) {
 <a href="javascript:void(0)" 
    onclick="loadContent('resident_view_department_details.php?id=<?= urlencode($d['id']) ?>')" 
    class="text-decoration-none text-reset">
-    <div class="card h-100 shadow-sm hover-card">
+    <div class="card h-100 shadow-sm border-0 rounded-lg hover-card transition">
         <div class="card-body">
-            <h5 class="card-title"><?= htmlspecialchars($d['name']) ?></h5>
-            <p class="card-text"><?= htmlspecialchars($d['description']) ?></p>
-            <div>
+            <!-- Title -->
+            <h5 class="card-title font-weight-bold mb-2 d-flex align-items-center">
+                <i class="bx bx-building-house text-primary mr-2"></i>
+                <?= htmlspecialchars($d['acronym']) ?>
+            </h5>
+
+            <!-- Description -->
+            <p class="card-text text-muted small mb-3">
+                <i><?= htmlspecialchars($d['description']) ?></i>
+            </p>
+
+            <!-- Services -->
+            <!-- <div class="d-flex flex-wrap gap-1">
                 <?php foreach ($d['services'] as $serviceName => $requirements): ?>
-                    <div class="mb-2">
-                        <span class="badge badge-info mb-1"><?= htmlspecialchars($serviceName) ?></span>
-                    </div>
+                    <span class="badge badge-pill badge-info mb-1 px-3 py-1 shadow-sm">
+                        <i class="bx bx-cog mr-1"></i> <?= htmlspecialchars($serviceName) ?>
+                    </span>
                 <?php endforeach; ?>
-            </div>
+            </div> -->
         </div>
     </div>
 </a>
+
 
     </div>
 
