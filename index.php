@@ -39,6 +39,7 @@ header {
   background-image:linear-gradient(to right, #0D92F4, #27548A);
   box-shadow:0 4px 8px rgba(0,0,0,0.2);
   position:relative;
+  z-index: 1000;
 }
 header .logo {
   font-size:1.5rem; font-weight:700;
@@ -67,6 +68,7 @@ nav ul li a:hover { color:#a8e0ff; }
     background:#27548A;
     display:none; flex-direction:column;
     padding:1rem;
+    z-index: 1000;
   }
   nav.active { display:flex; }
   nav ul { flex-direction:column; gap:1rem; }

@@ -8,10 +8,8 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
 
-    // Find user in auth and users tables
-    $query = "SELECT a.user_id, u.first_name, a.role FROM auth a
-              JOIN users u ON a.user_id = u.id
-              WHERE a.email = :email";
+    // Find user in auth table
+    $query = "SELECT id, email, role FROM auth WHERE email = :email";
     $stmt = $pdo->prepare($query);
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -28,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resetLink = "http://localhost/capstonev2/reset_password.php?token=$token";
 
         // Send email using PHPMailer
-        $result = sendResetEmail($email, $user['first_name'], $resetLink);
+        $result = sendResetEmail($email, $email, $resetLink); // Using email as name since we don't have first_name
 
         if ($result === true) {
             $message = "<div class='alert success'>A reset link has been sent to <strong>$email</strong>. Please check your inbox.</div>";
@@ -45,11 +43,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #f6f9fc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -59,71 +64,135 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .container {
             background: #fff;
-            padding: 30px 40px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 10px;
-            max-width: 500px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            max-width: 450px;
             width: 100%;
         }
 
         h2 {
             text-align: center;
             color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
         }
 
         label {
             display: block;
             margin: 12px 0 6px;
+            color: #2c3e50;
+            font-weight: 500;
         }
 
         input[type="email"] {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="email"]:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         button {
             width: 100%;
-            background-color: #2980b9;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px;
+            padding: 14px;
             font-size: 16px;
-            border-radius: 6px;
+            font-weight: 600;
+            border-radius: 8px;
             margin-top: 20px;
             cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         .alert {
-            padding: 10px;
-            margin-top: 15px;
-            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
             text-align: center;
+            font-size: 14px;
         }
 
         .success {
-            background-color: #dff0d8;
-            color: #3c763d;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
         .error {
-            background-color: #f2dede;
-            color: #a94442;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 25px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>Forgot Your Password?</h2>
+    <p class="subtitle">Enter your email to receive a password reset link</p>
 
     <?= $message ?>
 
-    <form method="POST" style="margin-top: 20px;">
-        <label for="email">Enter your email address:</label>
-        <input type="email" name="email" required>
+    <form method="POST">
+        <label for="email">Email Address</label>
+        <input type="email" name="email" id="email" placeholder="Enter your email" required>
         <button type="submit">Send Reset Link</button>
     </form>
+
+    <div class="back-link">
+        <a href="login.php">← Back to Login</a>
+    </div>
 </div>
 </body>
 </html>
