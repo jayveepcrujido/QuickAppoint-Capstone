@@ -2,6 +2,10 @@
 session_start();
 include 'conn.php';
 
+// Include Composer's autoloader for Tesseract OCR
+require __DIR__ . '/vendor/autoload.php';
+use thiagoalessio\TesseractOCR\TesseractOCR;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name     = $_POST['first_name'];
     $middle_name    = $_POST['middle_name'];
@@ -27,6 +31,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     move_uploaded_file($_FILES['valid_id_image']['tmp_name'], $valid_id_image_path);
     move_uploaded_file($_FILES['selfie_image']['tmp_name'], $selfie_image_path);
+
+    // -------------------------
+    // OCR PROCESSING
+    // -------------------------
+    try {
+        $ocrText = (new TesseractOCR($valid_id_image_path))
+                        ->lang('eng') // use 'eng' for English; add 'fil' if Filipino language pack installed
+                        ->run();
+
+        // Save OCR results for debugging/admin verification
+        file_put_contents($uploadDir . 'ocr_log.txt', "[$email]\n$ocrText\n\n", FILE_APPEND);
+
+        // Simple verification: check if last name exists in OCR text
+        if (stripos($ocrText, $last_name) === false) {
+            echo "<script>alert('Warning: The last name you entered might not match what is on your ID. Please double-check.');</script>";
+        }
+    } catch (Exception $e) {
+        error_log("OCR failed: " . $e->getMessage());
+    }
 
     try {
         $pdo->beginTransaction();

@@ -132,7 +132,7 @@ footer .contacts ul li a:hover { color:#a8e0ff; }
   <button class="menu-toggle"><i class="fas fa-bars"></i></button>
   <nav>
     <ul>
-      <li><a href="register.php">Register</a></li>
+      <li><a href="upload_id.php">Register</a></li>
       <li><a href="login.php">Login</a></li>
     </ul>
   </nav>
@@ -142,7 +142,7 @@ footer .contacts ul li a:hover { color:#a8e0ff; }
   <img src="assets/images/logo.png" alt="LGU Logo">
   <h1>Welcome to <span style="color:#0077b6;">LGU Quick Appoint</span></h1>
   <p>Book appointments with your local government units quickly and easily. Empowering residents with efficient and transparent public service.</p>
-  <a href="register.php">Get Started</a>
+  <a href="upload_id.php">Get Started</a>
 </main>
 
 <footer>
