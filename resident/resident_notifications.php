@@ -27,15 +27,15 @@ try {
 
 // Mark all notifications as read when page is loaded
 try {
-    $markReadStmt = $pdo->prepare("
-        UPDATE notifications 
-        SET is_read = 1
-        WHERE resident_id = ? AND is_read = 0
+    $markSeenStmt = $pdo->prepare("
+        UPDATE appointments 
+        SET is_seen_by_resident = 1
+        WHERE resident_id = ? AND status = 'Completed' AND is_seen_by_resident = 0
     ");
-    $markReadStmt->execute([$residentId]);
+    $markSeenStmt->execute([$residentId]);
 } catch (PDOException $e) {
     // Log error but don't stop page load
-    error_log("Error marking notifications as read: " . $e->getMessage());
+    error_log("Error marking appointments as seen: " . $e->getMessage());
 }
 
 // Fetch all notifications for the resident
@@ -68,9 +68,22 @@ try {
     $stmt->execute([$residentId]);
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // Count notifications by status
+    $pendingCount = 0;
+    $completedCount = 0;
+    foreach ($notifications as $notification) {
+        if ($notification['appointment_status'] === 'Pending') {
+            $pendingCount++;
+        } elseif ($notification['appointment_status'] === 'Completed') {
+            $completedCount++;
+        }
+    }
+    
 } catch (PDOException $e) {
     $error = "Error fetching notifications: " . $e->getMessage();
     $notifications = [];
+    $pendingCount = 0;
+    $completedCount = 0;
 }
 ?>
 
@@ -108,12 +121,12 @@ try {
         flex-shrink: 0;
     }
     
-    .icon-success {
-        background-color: #d1fae5;
-        color: #065f46;
+    .icon-completed {
+        background-color: #dcfce7;
+        color: #166534;
     }
     
-    .icon-warning {
+    .icon-pending {
         background-color: #fef3c7;
         color: #92400e;
     }
@@ -121,11 +134,6 @@ try {
     .icon-info {
         background-color: #dbeafe;
         color: #1e40af;
-    }
-    
-    .icon-completed {
-        background-color: #dcfce7;
-        color: #166534;
     }
     
     .notification-time {
@@ -204,17 +212,11 @@ try {
         <button class="btn btn-primary filter-btn active" data-filter="all">
             <i class='bx bx-list-ul'></i> All (<?php echo count($notifications); ?>)
         </button>
-        <button class="btn btn-outline-primary filter-btn" data-filter="confirmed">
-            <i class='bx bx-calendar-check'></i> Confirmed
-        </button>
-        <button class="btn btn-outline-primary filter-btn" data-filter="assigned">
-            <i class='bx bx-user-check'></i> Assigned
+        <button class="btn btn-outline-primary filter-btn" data-filter="pending">
+            <i class='bx bx-time'></i> Pending (<?php echo $pendingCount; ?>)
         </button>
         <button class="btn btn-outline-primary filter-btn" data-filter="completed">
-            <i class='bx bx-check-circle'></i> Completed
-        </button>
-        <button class="btn btn-outline-primary filter-btn" data-filter="pending">
-            <i class='bx bx-time'></i> Pending
+            <i class='bx bx-check-circle'></i> Completed (<?php echo $completedCount; ?>)
         </button>
     </div>
 
@@ -223,23 +225,17 @@ try {
         <?php if (count($notifications) > 0): ?>
             <?php foreach ($notifications as $notification): ?>
                 <?php
-                // Determine icon and color based on notification type
+                // Determine icon and color based on appointment status
                 $iconClass = 'icon-info';
                 $iconName = 'bx-bell';
-                $notificationType = 'pending';
+                $notificationType = strtolower($notification['appointment_status']);
                 
-                if (stripos($notification['message'], 'confirmed') !== false) {
-                    $iconClass = 'icon-success';
-                    $iconName = 'bx-calendar-check';
-                    $notificationType = 'confirmed';
-                } elseif (stripos($notification['message'], 'assigned') !== false) {
-                    $iconClass = 'icon-warning';
-                    $iconName = 'bx-user-check';
-                    $notificationType = 'assigned';
-                } elseif (stripos($notification['message'], 'completed') !== false) {
+                if ($notification['appointment_status'] === 'Completed') {
                     $iconClass = 'icon-completed';
                     $iconName = 'bx-check-circle';
-                    $notificationType = 'completed';
+                } elseif ($notification['appointment_status'] === 'Pending') {
+                    $iconClass = 'icon-pending';
+                    $iconName = 'bx-time';
                 }
                 
                 // Calculate time ago
@@ -333,13 +329,10 @@ try {
                                     <?php
                                     $statusClass = 'secondary';
                                     $statusText = $notification['appointment_status'];
-                                    switch(strtolower($notification['appointment_status'])) {
-                                        case 'pending': 
-                                            $statusClass = 'warning'; 
-                                            break;
-                                        case 'completed': 
-                                            $statusClass = 'success'; 
-                                            break;
+                                    if ($notification['appointment_status'] === 'Pending') {
+                                        $statusClass = 'warning';
+                                    } elseif ($notification['appointment_status'] === 'Completed') {
+                                        $statusClass = 'success';
                                     }
                                     ?>
                                     <span class="badge badge-<?php echo $statusClass; ?> mb-1">
@@ -456,8 +449,21 @@ try {
     
     // Check if empty state should be shown
     function checkEmptyState() {
-        if ($('.notification-card:visible').length === 0) {
-            showEmptyState();
+        const visibleCards = $('.notification-card:visible').length;
+        const emptyState = $('.empty-state');
+        
+        if (visibleCards === 0) {
+            if (emptyState.length === 0) {
+                $('.notifications-list').append(`
+                    <div class="empty-state">
+                        <i class='bx bx-bell-off'></i>
+                        <h4>No Notifications</h4>
+                        <p>No notifications found for this filter.</p>
+                    </div>
+                `);
+            }
+        } else {
+            emptyState.remove();
         }
     }
     
@@ -475,6 +481,11 @@ try {
     // Update filter counts
     function updateFilterCounts() {
         const totalCount = $('.notification-card').length;
+        const pendingCount = $('.notification-card[data-type="pending"]').length;
+        const completedCount = $('.notification-card[data-type="completed"]').length;
+        
         $('.filter-btn[data-filter="all"]').html('<i class="bx bx-list-ul"></i> All (' + totalCount + ')');
+        $('.filter-btn[data-filter="pending"]').html('<i class="bx bx-time"></i> Pending (' + pendingCount + ')');
+        $('.filter-btn[data-filter="completed"]').html('<i class="bx bx-check-circle"></i> Completed (' + completedCount + ')');
     }
 </script>

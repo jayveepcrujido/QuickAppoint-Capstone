@@ -808,6 +808,47 @@ body.modal-open {
         font-size: 0.7rem;
     }
 }
+/* Bulk Date Selection Styles */
+.bulk-date-section {
+  border: 2px solid #e3e8ef;
+  transition: all 0.3s ease;
+}
+
+.bulk-date-section:hover {
+  border-color: #0D92F4;
+  box-shadow: 0 4px 12px rgba(13, 146, 244, 0.2) !important;
+}
+
+.bulk-date-section h6 {
+  margin-bottom: 1rem;
+}
+
+.bulk-date-section .form-control-sm {
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  transition: border-color 0.2s ease;
+}
+
+.bulk-date-section .form-control-sm:focus {
+  border-color: #0D92F4;
+  box-shadow: 0 0 0 0.15rem rgba(13, 146, 244, 0.25);
+}
+
+/* Responsive adjustments for bulk section */
+@media (max-width: 768px) {
+  .bulk-date-section {
+    padding: 15px !important;
+  }
+  
+  .bulk-date-section h6 {
+    font-size: 0.95rem;
+  }
+  
+  .bulk-date-section .small,
+  .bulk-date-section small {
+    font-size: 0.75rem;
+  }
+}
 </style>
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
@@ -826,6 +867,40 @@ body.modal-open {
           <label for="selected-dates" class="font-weight-bold">Selected Dates and Slots:</label>
           <div id="dateInputs" class="p-2 bg-light rounded border"></div>
         </div>
+
+<!-- Bulk Date Selection Section -->
+<div class="bulk-date-section mb-3 p-3" style="background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+  <h6 class="font-weight-bold mb-3" style="color: #0D92F4;">
+    <i class="fas fa-calendar-plus mr-2"></i>Bulk Create Available Dates
+  </h6>
+  <div class="row">
+    <div class="col-md-3 col-6 mb-2">
+      <label class="font-weight-semibold small">Start Date</label>
+      <input type="date" id="bulkStartDate" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-3 col-6 mb-2">
+      <label class="font-weight-semibold small">End Date</label>
+      <input type="date" id="bulkEndDate" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-2 col-6 mb-2">
+      <label class="font-weight-semibold small">AM Slots</label>
+      <input type="number" id="bulkAMSlots" class="form-control form-control-sm" min="0" value="5">
+    </div>
+    <div class="col-md-2 col-6 mb-2">
+      <label class="font-weight-semibold small">PM Slots</label>
+      <input type="number" id="bulkPMSlots" class="form-control form-control-sm" min="0" value="5">
+    </div>
+    <div class="col-md-2 col-12 mb-2">
+      <label class="font-weight-semibold small d-none d-md-block">&nbsp;</label>
+      <button type="button" id="bulkAddDatesBtn" class="btn btn-primary btn-sm w-100">
+        <i class="fas fa-plus-circle mr-1"></i>Add Dates
+      </button>
+    </div>
+  </div>
+  <small class="text-muted">
+    <i class="fas fa-info-circle mr-1"></i>Select a date range to quickly add multiple available dates. Weekends will be automatically skipped.
+  </small>
+</div>
 
         <div class="form-group">
           <label class="font-weight-bold">Select Dates from Calendar</label>
@@ -1154,11 +1229,126 @@ body.modal-open {
     showModal('successModal');
   }
 
+  function addBulkDates() {
+    const startDate = $('#bulkStartDate').val();
+    const endDate = $('#bulkEndDate').val();
+    const amSlots = parseInt($('#bulkAMSlots').val()) || 0;
+    const pmSlots = parseInt($('#bulkPMSlots').val()) || 0;
+    
+    // Validation
+    if (!startDate || !endDate) {
+      alert('Please select both start and end dates.');
+      return;
+    }
+    
+    if (amSlots < 0 || pmSlots < 0) {
+      alert('Slots cannot be negative.');
+      return;
+    }
+    
+    if (amSlots === 0 && pmSlots === 0) {
+      alert('Please set at least one slot (AM or PM).');
+      return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (start > end) {
+      alert('Start date must be before or equal to end date.');
+      return;
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let addedCount = 0;
+    let skippedCount = 0;
+    let current = new Date(start);
+    
+    while (current <= end) {
+      // Skip weekends (0 = Sunday, 6 = Saturday)
+      if (current.getDay() !== 0 && current.getDay() !== 6) {
+        // Skip past dates
+        if (current >= today) {
+          const dateStr = current.toISOString().split('T')[0];
+          
+          // Only add if not already in the form or existing dates
+          if ($(`#dateInputs > div[data-date="${dateStr}"]`).length === 0) {
+            // Check if date already exists in database
+            if (existingDatesData.includes(dateStr)) {
+              skippedCount++;
+            } else {
+              // Add to calendar selection
+              $(`.calendar-day[data-date="${dateStr}"]`).addClass('selected');
+              
+              // Add to form
+              const inputHTML = `
+                <div class="mb-2 border p-3" data-date="${dateStr}" style="border-radius: 8px; border-left: 4px solid #0D92F4 !important;">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong style="color: #0D92F4; font-size: 1.1rem;">${dateStr}</strong>
+                    <button type="button" class="btn btn-sm btn-danger remove-date-btn" data-date="${dateStr}" style="border-radius: 6px;">
+                      <i class="fas fa-times"></i> Remove
+                    </button>
+                  </div>
+                  <div class="form-row">
+                    <div class="col">
+                      <label style="font-weight: 600; color: #495057;">AM Slots</label>
+                      <input type="number" name="available_date[${dateStr}][am]" class="form-control" min="0" value="${amSlots}" style="border-radius: 6px;">
+                    </div>
+                    <div class="col">
+                      <label style="font-weight: 600; color: #495057;">PM Slots</label>
+                      <input type="number" name="available_date[${dateStr}][pm]" class="form-control" min="0" value="${pmSlots}" style="border-radius: 6px;">
+                    </div>
+                  </div>
+                  <input type="hidden" name="available_date[${dateStr}][date]" value="${dateStr}">
+                </div>`;
+              $('#dateInputs').append(inputHTML);
+              addedCount++;
+            }
+          }
+        }
+      }
+      
+      current.setDate(current.getDate() + 1);
+    }
+    
+    checkSubmitButton();
+    
+    // Show feedback
+    let message = '';
+    if (addedCount > 0) {
+      message += `${addedCount} date(s) added successfully!`;
+    }
+    if (skippedCount > 0) {
+      message += ` ${skippedCount} date(s) skipped (already configured).`;
+    }
+    if (addedCount === 0 && skippedCount === 0) {
+      message = 'No valid dates found in the selected range.';
+    }
+    
+    $('#response-msg').html(`<div class="alert alert-${addedCount > 0 ? 'success' : 'warning'} alert-dismissible fade show">
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+      ${message}
+    </div>`);
+    
+    setTimeout(() => {
+      $('#response-msg').empty();
+    }, 4000);
+    
+    // Clear the bulk form
+    $('#bulkStartDate').val('');
+    $('#bulkEndDate').val('');
+    $('#bulkAMSlots').val('5');
+    $('#bulkPMSlots').val('5');
+  }
+
   window.availableDatesModule.generateCalendar = generateCalendar;
   window.availableDatesModule.addDateInput = addDateInput;
   window.availableDatesModule.checkSubmitButton = checkSubmitButton;
   window.availableDatesModule.openEditModal = openEditModal;
   window.availableDatesModule.showSuccessModal = showSuccessModal;
+  window.availableDatesModule.addBulkDates = addBulkDates;
 
   function setupEventHandlers() {
     if (isInitialized) {
@@ -1222,6 +1412,11 @@ body.modal-open {
         currentYear++;
       }
       generateCalendar(currentMonth, currentYear);
+    });
+
+    $(document).off('click.bulkAdd_' + NAMESPACE).on('click.bulkAdd_' + NAMESPACE, '#bulkAddDatesBtn', function(e) {
+      e.preventDefault();
+      addBulkDates();
     });
 
     $(document).off('click.deleteFromModal_' + NAMESPACE).on('click.deleteFromModal_' + NAMESPACE, '#deleteFromModalBtn', function(e) {
@@ -1471,6 +1666,11 @@ body.modal-open {
         console.log('Calendar element found on attempt', attempts);
         generateCalendar(currentMonth, currentYear);
         checkSubmitButton();
+        
+        // Set minimum date for bulk date inputs to today
+        const today = new Date().toISOString().split('T')[0];
+        $('#bulkStartDate, #bulkEndDate').attr('min', today);
+        
         setupEventHandlers();
         return true;
       } else if (attempts < maxAttempts) {
@@ -1498,6 +1698,7 @@ body.modal-open {
     $(document).off('.removeBtn_' + NAMESPACE);
     $(document).off('.prevMonth_' + NAMESPACE);
     $(document).off('.nextMonth_' + NAMESPACE);
+    $(document).off('.bulkAdd_' + NAMESPACE);
     $(document).off('.deleteFromModal_' + NAMESPACE);
     $(document).off('.saveEdit_' + NAMESPACE);
     $(document).off('.confirmDel_' + NAMESPACE);
@@ -1517,6 +1718,7 @@ body.modal-open {
       delete window.availableDatesModule.checkSubmitButton;
       delete window.availableDatesModule.openEditModal;
       delete window.availableDatesModule.showSuccessModal;
+      delete window.availableDatesModule.addBulkDates;
     }
     
     isInitialized = false;

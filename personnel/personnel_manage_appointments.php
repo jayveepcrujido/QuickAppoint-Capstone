@@ -394,6 +394,175 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         .appointment-card:nth-child(4) { animation-delay: 0.4s; }
         .appointment-card:nth-child(5) { animation-delay: 0.5s; }
         .appointment-card:nth-child(6) { animation-delay: 0.6s; }
+        /* Table Styles */
+.table-responsive {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    overflow-x: auto;
+}
+
+#appointments-table {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+#appointments-table thead {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+}
+
+#appointments-table thead th {
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+    font-size: 0.85rem;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+#appointments-table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e0e6ed;
+}
+
+#appointments-table tbody tr:hover {
+    background-color: #f7fafc;
+    transform: scale(1.01);
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.1);
+}
+
+#appointments-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    color: #4a5568;
+}
+
+#appointments-table tbody td strong {
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.badge-primary {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    border: none;
+}
+
+.reason-text {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.view-details-btn {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.view-details-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.view-details-btn i {
+    font-size: 1rem;
+}
+
+/* Empty State in Table */
+.empty-state {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #cbd5e0;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: #a0aec0;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Responsive Table */
+@media (max-width: 1200px) {
+    #appointments-table {
+        font-size: 0.85rem;
+    }
+    
+    #appointments-table thead th,
+    #appointments-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .table-responsive {
+        padding: 1rem;
+    }
+    
+    #appointments-table {
+        font-size: 0.8rem;
+    }
+    
+    #appointments-table thead th {
+        font-size: 0.75rem;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .view-details-btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+    
+    .badge-primary {
+        font-size: 0.75rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        border-radius: 10px;
+        padding: 0.5rem;
+    }
+    
+    #appointments-table {
+        font-size: 0.75rem;
+    }
+    
+    #appointments-table thead th {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.3rem;
+    }
+    
+    #appointments-table tbody td {
+        padding: 0.5rem 0.3rem;
+    }
+    
+    .view-details-btn {
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .view-details-btn i {
+        font-size: 0.85rem;
+    }
+    
+    .reason-text {
+        font-size: 0.75rem;
+    }
+}
     </style>
 </head>
 <body>
@@ -428,101 +597,132 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="row" id="appointments-container">
-        <?php if (!empty($appointmentData)): ?>
-            <?php foreach ($appointmentData as $app): ?>
-                <div class="col-12 col-md-6 col-lg-4 mb-4 appointment-card" data-service="<?= strtolower($app['service_name'] ?? '') ?>">
-                    <div class="card" data-toggle="modal" data-target="#viewModal<?= $app['id'] ?>">
-                        <div class="card-header">
-                            <i class="fas fa-hashtag mr-1"></i> <?= $app['transaction_id'] ?>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <?= htmlspecialchars($app['service_name'] ?? 'N/A') ?>
-                            </h5>
-                            <p>
-                                <i class="fas fa-user"></i>
-                                <strong><?= htmlspecialchars($app['first_name'] . ' ' . $app['last_name']) ?></strong>
-                            </p>
-                            <p class="text-truncate">
-                                <i class="fas fa-sticky-note"></i>
-                                <span><?= htmlspecialchars($app['reason']) ?></span>
-                            </p>
-                            <p class="mb-0">
-                                <i class="fas fa-calendar-day"></i>
-                                <span><?= $app['scheduled_for'] ? date('M j, Y • g:i A', strtotime($app['scheduled_for'])) : 'Not Scheduled' ?></span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+        <div class="table-responsive">
+    <table class="table table-hover" id="appointments-table">
+        <thead>
+            <tr>
+                <th style="width: 12%;">Transaction ID</th>
+                <th style="width: 18%;">Resident Name</th>
+                <th style="width: 15%;">Service</th>
+                <!-- <th style="width: 20%;">Reason</th> -->
+                <th style="width: 15%;">Scheduled For</th>
+                <th style="width: 12%;">Requested At</th>
+                <th style="width: 8%;" class="text-center">Action</th>
+            </tr>
+        </thead>
+        <tbody id="appointments-tbody">
+            <?php if (!empty($appointmentData)): ?>
+                <?php foreach ($appointmentData as $app): ?>
+                    <tr class="appointment-row" data-service="<?= strtolower($app['service_name'] ?? '') ?>">
+                        <td>
+                            <span class="badge badge-primary" style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">
+                                <?= $app['transaction_id'] ?>
+                            </span>
+                        </td>
+                        <td>
+                            <strong><?= htmlspecialchars($app['first_name'] . ' ' . $app['last_name']) ?></strong>
+                        </td>
+                        <td><?= htmlspecialchars($app['service_name'] ?? 'N/A') ?></td>
+                        <!-- <td>
+                            <span class="reason-text"><?= htmlspecialchars(substr($app['reason'], 0, 50)) ?><?= strlen($app['reason']) > 50 ? '...' : '' ?></span>
+                        </td> -->
+                        <td>
+                            <?php if ($app['scheduled_for']): ?>
+                                <i class="fas fa-calendar-day mr-1" style="color: #3498db;"></i>
+                                <?= date('M j, Y', strtotime($app['scheduled_for'])) ?><br>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock mr-1"></i><?= date('g:i A', strtotime($app['scheduled_for'])) ?>
+                                </small>
+                            <?php else: ?>
+                                <span class="text-muted">Not Scheduled</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <small><?= date('M j, Y', strtotime($app['requested_at'])) ?></small><br>
+                            <small class="text-muted"><?= date('g:i A', strtotime($app['requested_at'])) ?></small>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-info view-details-btn" 
+                                    data-toggle="modal" 
+                                    data-target="#viewModal<?= $app['id'] ?>"
+                                    title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
 
-                <!-- Appointment Detail Modal -->
-                <div class="modal fade" id="viewModal<?= $app['id'] ?>" tabindex="-1">
-                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="fas fa-info-circle mr-2"></i>
-                                    <?= $app['transaction_id'] ?>
-                                </h5>
-                                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="info-section">
-                                    <h6><i class="fas fa-user-circle mr-2"></i>Personal Information</h6>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>Full Name:</strong> <?= htmlspecialchars($app['first_name'] . ' ' . $app['middle_name'] . ' ' . $app['last_name']) ?></p>
-                                            <p><strong>Email:</strong> <?= htmlspecialchars($app['email']) ?></p>
-                                            <p><strong>Address:</strong> <?= htmlspecialchars($app['address']) ?></p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <p><strong>Birthday:</strong> <?= htmlspecialchars($app['birthday']) ?></p>
-                                            <p><strong>Age:</strong> <?= htmlspecialchars($app['age']) ?> years old</p>
-                                            <p><strong>Sex:</strong> <?= htmlspecialchars($app['sex']) ?></p>
-                                            <p><strong>Civil Status:</strong> <?= htmlspecialchars($app['civil_status']) ?></p>
+                    <!-- Keep the existing modal code here -->
+                    <div class="modal fade" id="viewModal<?= $app['id'] ?>" tabindex="-1">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        <?= $app['transaction_id'] ?>
+                                    </h5>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="info-section">
+                                        <h6><i class="fas fa-user-circle mr-2"></i>Personal Information</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Full Name:</strong> <?= htmlspecialchars($app['first_name'] . ' ' . $app['middle_name'] . ' ' . $app['last_name']) ?></p>
+                                                <p><strong>Email:</strong> <?= htmlspecialchars($app['email']) ?></p>
+                                                <p><strong>Address:</strong> <?= htmlspecialchars($app['address']) ?></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Birthday:</strong> <?= htmlspecialchars($app['birthday']) ?></p>
+                                                <p><strong>Age:</strong> <?= htmlspecialchars($app['age']) ?> years old</p>
+                                                <p><strong>Sex:</strong> <?= htmlspecialchars($app['sex']) ?></p>
+                                                <p><strong>Civil Status:</strong> <?= htmlspecialchars($app['civil_status']) ?></p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div class="info-section">
-                                    <h6><i class="fas fa-clipboard-list mr-2"></i>Appointment Details</h6>
-                                    <p><strong>Service:</strong> <?= htmlspecialchars($app['service_name'] ?? 'N/A') ?></p>
-                                    <p><strong>Reason:</strong> <?= htmlspecialchars($app['reason']) ?></p>
-                                    <p><strong>Scheduled:</strong> <?= $app['scheduled_for'] ? date('F j, Y • g:i A', strtotime($app['scheduled_for'])) : 'Not Scheduled' ?></p>
-                                    <p><strong>Requested:</strong> <?= date('F j, Y • g:i A', strtotime($app['requested_at'])) ?></p>
-                                </div>
+                                    <div class="info-section">
+                                        <h6><i class="fas fa-clipboard-list mr-2"></i>Appointment Details</h6>
+                                        <p><strong>Service:</strong> <?= htmlspecialchars($app['service_name'] ?? 'N/A') ?></p>
+                                        <p><strong>Reason:</strong> <?= htmlspecialchars($app['reason']) ?></p>
+                                        <p><strong>Scheduled:</strong> <?= $app['scheduled_for'] ? date('F j, Y • g:i A', strtotime($app['scheduled_for'])) : 'Not Scheduled' ?></p>
+                                        <p><strong>Requested:</strong> <?= date('F j, Y • g:i A', strtotime($app['requested_at'])) ?></p>
+                                    </div>
 
-                                <div class="info-section">
-                                    <h6><i class="fas fa-id-card mr-2"></i>Valid ID</h6>
-                                    <img src="<?= htmlspecialchars($app['valid_id_image']) ?>" 
-                                         alt="Valid ID" class="img-thumbnail clickable-id w-100" 
-                                         style="cursor: zoom-in;"
-                                         data-toggle="modal" data-target="#fullImageModal" 
-                                         data-img-src="<?= htmlspecialchars($app['valid_id_image']) ?>">
-                                </div>
+                                    <div class="info-section">
+                                        <h6><i class="fas fa-id-card mr-2"></i>Valid ID</h6>
+                                        <img src="<?= htmlspecialchars($app['valid_id_image']) ?>" 
+                                             alt="Valid ID" class="img-thumbnail clickable-id w-100" 
+                                             style="cursor: zoom-in;"
+                                             data-toggle="modal" data-target="#fullImageModal" 
+                                             data-img-src="<?= htmlspecialchars($app['valid_id_image']) ?>">
+                                    </div>
 
-                                <div class="text-right mt-4">
-                                    <button class="btn btn-success btn-action complete-btn" data-id="<?= $app['id'] ?>" data-dismiss="modal">
-                                        <i class="fas fa-check-circle mr-2"></i> Mark as Completed
-                                    </button>
-                                    <button class="btn btn-danger btn-action delete-btn" data-id="<?= $app['id'] ?>" data-dismiss="modal">
-                                        <i class="fas fa-trash-alt mr-2"></i> Delete
-                                    </button>
+                                    <div class="text-right mt-4">
+                                        <button class="btn btn-success btn-action complete-btn" data-id="<?= $app['id'] ?>" data-dismiss="modal">
+                                            <i class="fas fa-check-circle mr-2"></i> Mark as Completed
+                                        </button>
+                                        <button class="btn btn-danger btn-action delete-btn" data-id="<?= $app['id'] ?>" data-dismiss="modal">
+                                            <i class="fas fa-trash-alt mr-2"></i> Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <div class="col-12">
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>No pending appointments at the moment</p>
-                </div>
-            </div>
-        <?php endif; ?>
-    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No pending appointments at the moment</p>
+                        </div>
+                    </td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</div>
 </div>
 
 <!-- Full Image Modal -->
@@ -538,20 +738,39 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function () {
-    function applyFilters() {
-        const searchVal = $('#searchInput').val().toLowerCase();
-        const selectedService = $('#serviceFilter').val().toLowerCase();
+function applyFilters() {
+    const searchVal = $('#searchInput').val().toLowerCase();
+    const selectedService = $('#serviceFilter').val().toLowerCase();
 
-        $('.appointment-card').each(function () {
-            const text = $(this).text().toLowerCase();
-            const service = $(this).data('service');
+    $('.appointment-row').each(function () {
+        const text = $(this).text().toLowerCase();
+        const service = $(this).data('service');
 
-            const matchesSearch = text.includes(searchVal);
-            const matchesService = selectedService === "" || service === selectedService;
+        const matchesSearch = text.includes(searchVal);
+        const matchesService = selectedService === "" || service === selectedService;
 
-            $(this).toggle(matchesSearch && matchesService);
-        });
+        $(this).toggle(matchesSearch && matchesService);
+    });
+
+    // Show/hide empty state
+    const visibleRows = $('.appointment-row:visible').length;
+    if (visibleRows === 0 && $('#appointments-tbody tr').length > 0) {
+        if ($('#no-results-row').length === 0) {
+            $('#appointments-tbody').append(`
+                <tr id="no-results-row">
+                    <td colspan="7" class="text-center py-5">
+                        <div class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>No appointments match your search criteria</p>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        }
+    } else {
+        $('#no-results-row').remove();
     }
+}
 
     $(document).on('click', '.complete-btn', function () {
         const id = $(this).data('id');
@@ -589,6 +808,12 @@ $(document).ready(function () {
     $('#fullImageModal').on('hidden.bs.modal', function () {
         $('body').addClass('modal-open');
     });
+});
+$('#clearFilters').click(function () {
+    $('#searchInput').val('');
+    $('#serviceFilter').val('');
+    $('.appointment-row').show();
+    $('#no-results-row').remove();
 });
 </script>
 </body>

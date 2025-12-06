@@ -58,6 +58,24 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
             transform: scale(1.1);
         }
 
+        /* --- Style for the notification dot --- */
+        .notification-trigger {
+            position: relative; /* This is the parent */
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px; /* Adjust as needed */
+            right: -8px; /* Adjust as needed */
+            width: 12px;
+            height: 12px;
+            background-color: var(--danger-color);
+            border-radius: 50%;
+            border: 2px solid white;
+            display: none; /* Hidden by default, shown by JS */
+        }
+        /* --- End of notification dot style --- */
+
         .profile-trigger {
             position: relative;
             cursor: pointer;
@@ -154,14 +172,11 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
         /* Sidebar Logo Section */
         #sidebar-logo {
             display: block;
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             margin: 0 auto 1rem;
             border-radius: 50%;
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            background: white;
             padding: 8px;
         }
 
@@ -587,10 +602,46 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
                     overlay.classList.remove('show');
                 }
             });
+
+            // --- New Notification Check ---
+            function checkNotifications() {
+                $.ajax({
+                    url: 'check_notifications.php', // Path to your new backend script
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.unreadCount > 0) {
+                            $('#notificationBadge').show(); // Show the dot
+                        } else {
+                            $('#notificationBadge').hide(); // Hide the dot
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Failed to check notifications: " + error);
+                    }
+                });
+            }
+
+            // Check for notifications on page load
+            checkNotifications();
+
+            // Optionally, check for new notifications every 60 seconds
+            setInterval(checkNotifications, 60000);
+            // --- End of New Notification Check ---
+
         });
 
     function loadContent(page) {
         console.log("Attempting to load: " + page); // Debug line
+
+        // --- ADDED ---
+        // If user clicks on notifications, hide badge immediately
+        // The backend of resident_notifications.php should mark them as read
+        if (page === 'resident_notifications.php') {
+            $('#notificationBadge').hide();
+        }
+        // --- END ---
+
         $("#content-area").fadeOut(200, function() {
             $(this).load(page, function(response, status, xhr) {
                 if (status == "error") {
@@ -629,10 +680,12 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
         <div class="header_toggle"> <i class='bx bx-menu' id="header-toggle"></i> </div>
 
 <div class="d-flex align-items-center">
+        <!-- MODIFIED: Parent div needs to be relative -->
         <div class="position-relative d-inline-block mr-3" style="z-index: 1050;">
             <div class="notification-trigger" onclick="loadContent('resident_notifications.php')" title="Notifications">
                 <i class='bx bx-bell' style="font-size: 24px; cursor: pointer; color: #ffffffff;"></i>
-                <span id="notificationBadge" class="notification-badge" style="display: none;"></span>
+                <!-- This span is the notification dot. It's empty but styled with CSS -->
+                <span id="notificationBadge" class="notification-badge"></span>
             </div>
         </div>
 
@@ -672,8 +725,8 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
             <a href="#" class="nav_link" onclick="loadContent('residents_view_departments.php')">
                 <i class='bx bx-user'></i> <span>View Departments</span>
             </a>
-            <a href="#" class="nav_link" onclick="loadContent('residents_select_form.php')">
-                <i class='bx bx-message-square'></i> <span>Feedback</span>
+            <a href="#" class="nav_link" onclick="loadContent('residents_completed_appointments.php')">
+                <i class='bx bx-message-square'></i> <span>Submit Feedback</span>
             </a>
             <a href="#" data-toggle="modal" data-target="#logoutModal" class="nav_link">
                 <i class='bx bx-log-out'></i> <span>Logout</span>

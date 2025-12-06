@@ -1,4 +1,5 @@
 <?php
+include '../conn.php';
 // Add session configuration BEFORE session_start()
 ini_set('session.gc_maxlifetime', 86400); // 24 hours
 ini_set('session.cookie_lifetime', 86400); // 24 hours
@@ -21,6 +22,61 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'LGU Personnel') {
 
 // Get user name from session (set during ../login.php)
 $user_name = $_SESSION['user_name'] ?? 'LGU Personnel';
+
+// Get personnel's department_id for tasks
+$dept_stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_id = ?");
+$dept_stmt->execute([$_SESSION['auth_id']]);
+$user_department_id = $dept_stmt->fetchColumn();
+
+// Get today's appointments
+$today = date('Y-m-d');
+$today_tasks = [];
+$pending_count = 0;
+$completed_today = 0;
+
+if ($user_department_id) {
+    // Get today's scheduled appointments
+    $tasks_query = $pdo->prepare("
+        SELECT 
+            a.id, 
+            a.transaction_id, 
+            a.status, 
+            a.scheduled_for,
+            CONCAT(r.first_name, ' ', r.last_name) as resident_name,
+            ds.service_name,
+            TIME(a.scheduled_for) as appointment_time
+        FROM appointments a
+        JOIN residents r ON a.resident_id = r.id
+        LEFT JOIN department_services ds ON a.service_id = ds.id
+        WHERE a.department_id = ? 
+        AND DATE(a.scheduled_for) = ?
+        AND a.status IN ('Pending', 'Confirmed')
+        ORDER BY a.scheduled_for ASC
+        LIMIT 5
+    ");
+    $tasks_query->execute([$user_department_id, $today]);
+    $today_tasks = $tasks_query->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get pending appointments count
+    $pending_query = $pdo->prepare("
+        SELECT COUNT(*) 
+        FROM appointments 
+        WHERE department_id = ? AND status = 'Pending'
+    ");
+    $pending_query->execute([$user_department_id]);
+    $pending_count = $pending_query->fetchColumn();
+    
+    // Get completed today count
+    $completed_query = $pdo->prepare("
+        SELECT COUNT(*) 
+        FROM appointments 
+        WHERE department_id = ? 
+        AND status = 'Completed' 
+        AND DATE(updated_at) = ?
+    ");
+    $completed_query->execute([$user_department_id, $today]);
+    $completed_today = $completed_query->fetchColumn();
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,6 +88,7 @@ $user_name = $_SESSION['user_name'] ?? 'LGU Personnel';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/boxicons/2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href='https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="../assets/css/personnel.css">
     
     <style>
@@ -395,6 +452,200 @@ $user_name = $_SESSION['user_name'] ?? 'LGU Personnel';
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
             }
         }
+        /* My Tasks Today Section */
+.tasks-section {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem;
+}
+
+.tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.tasks-header h3 {
+    margin: 0;
+    color: var(--dark-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tasks-header .date-badge {
+    background: linear-gradient(135deg, #0D92F4, #27548A);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.task-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.stat-card .stat-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.task-item {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.task-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.task-item.status-confirmed {
+    border-left-color: var(--secondary-color);
+}
+
+.task-item.status-pending {
+    border-left-color: var(--warning-color);
+}
+
+.task-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #0D92F4, #27548A);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.task-info {
+    margin-top: 0.5rem;
+}
+
+.task-info h6 {
+    margin: 0 0 0.25rem 0;
+    color: var(--dark-color);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.task-info p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.task-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.task-status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.task-status-badge.confirmed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.no-tasks {
+    text-align: center;
+    padding: 2rem;
+    color: #94a3b8;
+}
+
+.no-tasks i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .tasks-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .task-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .stat-card .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 0.75rem;
+    }
+    
+    .task-item {
+        padding: 0.75rem;
+    }
+}
+.tasks-header:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.tasks-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
     </style>
 
 <script>
@@ -795,7 +1046,19 @@ window.cleanupAllPages = function() {
             // Check every 30 seconds for new notifications
             setInterval(checkNewNotifications, 30000);
         });
-
+        function toggleTasksSection() {
+            const content = $('#tasks-collapsible-content');
+            const icon = $('#tasks-toggle-icon');
+            
+            content.slideToggle(300, function() {
+                // Rotate icon based on visibility
+                if (content.is(':visible')) {
+                    icon.css('transform', 'rotate(0deg)');
+                } else {
+                    icon.css('transform', 'rotate(-90deg)');
+                }
+            });
+        }
     </script>
 
 </head>
@@ -842,17 +1105,23 @@ window.cleanupAllPages = function() {
         <img src="../assets/images/Unisan_logo.png" id="sidebar-logo" alt="Sidebar Logo" class="header_img">
         <h4 style="text-align: center; color: white;">Personnel Menu</h4>
         <nav class="nav">
-            <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_analytics.php');">
+            <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_dashboard_content.php');">
                 <i class='bx bx-home-alt'></i> <span>Dashboard</span>
             </a>
+            <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_analytics.php');">
+                <i class='bx bx-chart-bar-big-columns'></i> <span>Analytics</span>
+            </a>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_manage_appointments.php');">
-                <i class='bx bx-calendar'></i> <span>View Appointments</span>
+                <i class='bx bx-calendar'></i> <span>Manage Appointments</span>
             </a>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_view_appointments_status.php');">
-                <i class='bx bx-calendar-check'></i> <span>Appointments Status</span>
+                <i class='bx bx-calendar-check'></i> <span>All Appointments</span>
             </a>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('create_available_dates.php');">
                 <i class='bx bx-calendar-plus'></i> <span>Create Available Dates</span>
+            </a>
+            <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_view_feedbacks.php');">
+                <i class='bx bx-message-star'></i> <span>View Feedbacks</span>
             </a>
             <a href="javascript:void(0);" class="nav_link" data-toggle="modal" data-target="#logoutModal">
                 <i class='bx bx-log-out'></i> <span>Logout</span>
@@ -869,6 +1138,87 @@ window.cleanupAllPages = function() {
             <div class="welcome-card">
                 <h2><i class='bx bx-wave'></i> Welcome Back, <?php echo htmlspecialchars($user_name); ?>!</h2>
                 <p>You're logged in as LGU Personnel. Manage your appointments and availability from your dashboard.</p>
+            </div>
+
+            <!-- My Tasks Today Section -->
+            <div class="tasks-section">
+            <div class="tasks-header" style="cursor: pointer;" onclick="toggleTasksSection()">
+                <h3>
+                    <i class='bx bx-task'></i>
+                    My Tasks Today
+                    <i class='bx bx-chevron-down' id="tasks-toggle-icon" style="font-size: 1.2rem; transition: transform 0.3s ease; transform: rotate(-90deg);"></i>
+                </h3>
+                <span class="date-badge">
+                        <i class='bx bx-calendar'></i>
+                        <?php echo date('F j, Y'); ?>
+                    </span>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div id="tasks-collapsible-content" style="display: none;">
+                    <div class="task-stats">
+                        <div class="stat-card">
+                            <div class="stat-number"><?php echo count($today_tasks); ?></div>
+                            <div class="stat-label">Scheduled Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number"><?php echo $pending_count; ?></div>
+                            <div class="stat-label">Pending Review</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number"><?php echo $completed_today; ?></div>
+                            <div class="stat-label">Completed Today</div>
+                        </div>
+                    </div>
+                
+                
+                <!-- Today's Appointments -->
+                <div class="tasks-list">
+                    <?php if (!empty($today_tasks)): ?>
+                        <?php foreach ($today_tasks as $task): ?>
+                            <div class="task-item status-<?php echo strtolower($task['status']); ?>" 
+                                onclick="loadContent('personnel_manage_appointments.php');">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <span class="task-time">
+                                        <i class='bx bx-time-five'></i>
+                                        <?php echo date('g:i A', strtotime($task['appointment_time'])); ?>
+                                    </span>
+                                    <span class="task-status-badge <?php echo strtolower($task['status']); ?>">
+                                        <?php echo $task['status']; ?>
+                                    </span>
+                                </div>
+                                <div class="task-info">
+                                    <h6><?php echo htmlspecialchars($task['resident_name']); ?></h6>
+                                    <p>
+                                        <i class='bx bx-briefcase'></i>
+                                        <?php echo htmlspecialchars($task['service_name'] ?? 'General Service'); ?>
+                                    </p>
+                                    <small class="text-muted">
+                                        <i class='bx bx-hash'></i>
+                                        <?php echo htmlspecialchars($task['transaction_id']); ?>
+                                    </small>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                        
+                        <?php if (count($today_tasks) >= 5): ?>
+                            <div class="text-center mt-3">
+                                <button class="btn btn-outline-primary btn-sm" onclick="loadContent('personnel_view_appointments_status.php');">
+                                    <i class='bx bx-list-ul'></i> View All Appointments
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <div class="no-tasks">
+                            <i class='bx bx-check-circle'></i>
+                            <p>No appointments scheduled for today. You're all caught up!</p>
+                            <button class="btn btn-primary btn-sm mt-2" onclick="loadContent('create_available_dates.php');">
+                                <i class='bx bx-calendar-plus'></i> Create Available Dates
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
             </div>
 
             <!-- Section Title -->

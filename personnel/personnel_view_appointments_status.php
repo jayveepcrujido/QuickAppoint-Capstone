@@ -19,16 +19,36 @@ if (!$personnel) {
 
 $departmentId = $personnel['department_id'];
 
+// Get date filters from GET parameters
+$startDate = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : null;
+$endDate = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : null;
+
+// Build the WHERE clause with date filters
+$whereClause = "WHERE a.department_id = ?";
+$params = [$departmentId];
+
+if ($startDate && $endDate) {
+    $whereClause .= " AND DATE(a.scheduled_for) BETWEEN ? AND ?";
+    $params[] = $startDate;
+    $params[] = $endDate;
+} elseif ($startDate) {
+    $whereClause .= " AND DATE(a.scheduled_for) >= ?";
+    $params[] = $startDate;
+} elseif ($endDate) {
+    $whereClause .= " AND DATE(a.scheduled_for) <= ?";
+    $params[] = $endDate;
+}
+
 // Fetch appointments with resident info
 $stmt = $pdo->prepare("
     SELECT a.id, a.transaction_id, a.status, a.scheduled_for, a.reason, a.requested_at,
            r.first_name, r.last_name
     FROM appointments a
     JOIN residents r ON a.resident_id = r.id
-    WHERE a.department_id = ?
+    $whereClause
     ORDER BY a.scheduled_for DESC
 ");
-$stmt->execute([$departmentId]);
+$stmt->execute($params);
 $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -40,7 +60,9 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Appointments Status</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css"/>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
@@ -378,6 +400,169 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 border-radius: 12px;
             }
         }
+        /* Date Filter Styles */
+.datepicker {
+    cursor: pointer;
+    background-color: white;
+}
+
+.datepicker:focus {
+    cursor: pointer;
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: none;
+}
+
+.btn i {
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+    color: white;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(149, 165, 166, 0.3);
+    color: white;
+}
+
+/* jQuery UI Datepicker Custom Styling */
+.ui-datepicker {
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.ui-datepicker-header {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.ui-datepicker-title {
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.ui-datepicker-prev,
+.ui-datepicker-next {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    top: 0.5rem;
+}
+
+.ui-datepicker-prev span,
+.ui-datepicker-next span {
+    background: white;
+    border-radius: 4px;
+}
+
+.ui-datepicker th {
+    color: #3498db;
+    font-weight: 700;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+}
+
+.ui-datepicker td {
+    padding: 0.25rem;
+}
+
+.ui-datepicker td a {
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    color: #2c3e50;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.ui-datepicker td a:hover {
+    background: #ebf5fb;
+    color: #3498db;
+}
+
+.ui-datepicker td .ui-state-active {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
+
+.ui-datepicker td .ui-state-highlight {
+    background: #f39c12;
+    color: white;
+}
+
+.ui-datepicker-buttonpane {
+    border-top: 1px solid #e0e6ed;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.ui-datepicker-buttonpane button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ui-datepicker-buttonpane button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments for filters */
+@media (max-width: 991px) {
+    .filter-section {
+        padding: 1rem;
+    }
+    
+    .filter-label {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    #statusFilter,
+    .datepicker {
+        font-size: 0.9rem;
+    }
+}
     </style>
 </head>
 <body>
@@ -387,17 +572,55 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <p>Manage and track all appointments for your department</p>
     </div>
 
-    <div class="filter-section">
-        <div class="filter-label">
-            <i class="fas fa-filter"></i>
-            <span>Filter by Status:</span>
+<div class="filter-section">
+    <form id="filterForm" class="row w-100 align-items-end">
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="filter-label">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Start Date:</span>
+            </div>
+            <input type="text" 
+                   class="form-control datepicker" 
+                   id="start_date" 
+                   name="start_date" 
+                   placeholder="Select start date"
+                   value="<?= htmlspecialchars($startDate ?? '') ?>"
+                   readonly>
         </div>
-        <select id="statusFilter" class="form-control">
-            <option value="">All Appointments</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-        </select>
-    </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="filter-label">
+                <i class="fas fa-calendar-alt"></i>
+                <span>End Date:</span>
+            </div>
+            <input type="text" 
+                   class="form-control datepicker" 
+                   id="end_date" 
+                   name="end_date" 
+                   placeholder="Select end date"
+                   value="<?= htmlspecialchars($endDate ?? '') ?>"
+                   readonly>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="filter-label">
+                <i class="fas fa-filter"></i>
+                <span>Status:</span>
+            </div>
+            <select id="statusFilter" class="form-control">
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-primary btn-block mb-2" onclick="applyFilters()">
+                <i class="fas fa-search"></i> Apply
+            </button>
+            <button type="button" class="btn btn-secondary btn-block" onclick="clearFilters()">
+                <i class="fas fa-redo"></i> Clear
+            </button>
+        </div>
+    </form>
+</div>
 
     <!-- Desktop Table View -->
     <div class="table-card desktop-table">
@@ -555,6 +778,34 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
   function initializePage() {
     if (isInitialized) {
       console.log('Page already initialized, skipping...');
+        // Initialize Datepicker
+        $('.datepicker').datepicker({
+            dateFormat: 'yy-mm-dd',
+            changeMonth: true,
+            changeYear: true,
+            showButtonPanel: true,
+            yearRange: '-10:+10',
+            onClose: function(selectedDate) {
+                // If start_date is selected, set minDate for end_date
+                if ($(this).attr('id') === 'start_date') {
+                    $('#end_date').datepicker('option', 'minDate', selectedDate);
+                }
+                // If end_date is selected, set maxDate for start_date
+                if ($(this).attr('id') === 'end_date') {
+                    $('#start_date').datepicker('option', 'maxDate', selectedDate);
+                }
+            }
+        });
+        
+        // Set initial min/max dates if values exist
+        var startVal = $('#start_date').val();
+        var endVal = $('#end_date').val();
+        if (startVal) {
+            $('#end_date').datepicker('option', 'minDate', startVal);
+        }
+        if (endVal) {
+            $('#start_date').datepicker('option', 'maxDate', endVal);
+        }
       return;
     }
     
@@ -600,6 +851,11 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Remove all event handlers with this namespace
     $("#statusFilter").off('.' + NAMESPACE);
     $(document).off('.' + NAMESPACE);
+        
+    // Destroy datepickers
+    if ($('.datepicker').length) {
+        $('.datepicker').datepicker('destroy');
+    }
     
     // Reset initialization flag
     isInitialized = false;

@@ -308,7 +308,7 @@ $personnel = $stmt->fetchAll();
         .form-control-custom {
             border: 2px solid #e2e8f0;
             border-radius: 10px;
-            padding: 0.75rem 1rem;
+            padding: 0.1rem;
             transition: all 0.3s ease;
         }
 

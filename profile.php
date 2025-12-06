@@ -178,7 +178,7 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
     .form-control {
       border: 2px solid #e2e8f0;
       border-radius: 10px;
-      padding: 0.75rem 1rem;
+      padding: 1re
       font-size: 0.95rem;
       transition: all 0.3s ease;
       background: #f8fafc;
@@ -379,7 +379,7 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
       }
 
       .form-control {
-        padding: 0.65rem 0.9rem;
+        padding: 0.1rem;
         font-size: 0.9rem;
       }
 
@@ -418,6 +418,355 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
         padding: 2.5rem;
       }
     }
+    .bg-gradient-blue {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+#changePasswordModal .modal-content {
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+#changePasswordModal .modal-header {
+  border: none;
+  padding: 24px 32px;
+}
+
+#changePasswordModal .modal-body {
+  padding: 32px;
+  background: #ffffff;
+}
+
+#changePasswordModal .modal-footer {
+  border: none;
+  padding: 24px 32px;
+  background: #f8fafc;
+}
+
+#changePasswordModal .modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+#changePasswordModal .close {
+  opacity: 1;
+  text-shadow: none;
+  font-size: 28px;
+  font-weight: 300;
+  transition: transform 0.2s ease;
+}
+
+#changePasswordModal .close:hover {
+  transform: rotate(90deg);
+}
+
+#changePasswordModal .form-group {
+  margin-bottom: 24px;
+}
+
+#changePasswordModal .form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+#changePasswordModal .form-group label i {
+  font-size: 14px;
+  margin-right: 6px;
+  color: #64748b;
+}
+
+.password-input-group {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  background: #ffffff;
+  display: flex;
+  align-items: stretch;
+}
+
+.password-input-group:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.password-input-group .input-group-prepend,
+.password-input-group .input-group-append {
+  display: flex;
+  align-items: center;
+}
+
+.password-input-group .input-group-text {
+  background: transparent;
+  border: none;
+  padding: 0 16px;
+  color: #64748b;
+}
+
+.password-input-group .form-control {
+  border: none;
+  padding: 14px 16px;
+  font-size: 15px;
+  background: transparent;
+  height: auto;
+  flex: 1;
+}
+
+.password-input-group .form-control::placeholder {
+  color: #94a3b8;
+}
+
+.password-input-group .form-control:focus {
+  box-shadow: none;
+  background: transparent;
+  outline: none;
+}
+
+.btn-toggle-password {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 0 16px;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-toggle-password:hover {
+  color: #2563eb;
+}
+
+.btn-toggle-password:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.strength-container {
+  margin-top: 12px;
+}
+
+.strength-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.strength-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+#strengthText {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.password-progress {
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.password-progress .progress-bar {
+  transition: width 0.4s ease, background-color 0.4s ease;
+  border-radius: 8px;
+}
+
+.requirements-box {
+  margin-top: 16px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.requirements-title {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.requirements-title i {
+  margin-right: 6px;
+  color: #2563eb;
+}
+
+.password-requirements {
+  display: grid;
+  gap: 8px;
+}
+
+.password-requirements small {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+
+.password-requirements small i {
+  font-size: 8px;
+  margin-right: 10px;
+  color: #cbd5e1;
+  transition: all 0.3s ease;
+}
+
+.password-requirements small.met {
+  color: #059669 !important;
+  font-weight: 600;
+}
+
+.password-requirements small.met i {
+  color: #059669 !important;
+}
+
+#matchMessage {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+}
+
+#matchMessage i {
+  margin-right: 6px;
+}
+
+#changePasswordModal .btn {
+  padding: 12px 28px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+#changePasswordModal .btn i {
+  font-size: 14px;
+}
+
+#changePasswordModal .btn-light {
+  background: #ffffff;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+}
+
+#changePasswordModal .btn-light:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+#changePasswordModal .btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+#changePasswordModal .btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+#changePasswordModal .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Tablet responsiveness */
+@media (max-width: 768px) {
+  #changePasswordModal .modal-dialog {
+    max-width: 540px;
+    margin: 1rem;
+  }
+
+  #changePasswordModal .modal-header,
+  #changePasswordModal .modal-body,
+  #changePasswordModal .modal-footer {
+    padding: 24px;
+  }
+
+  #changePasswordModal .modal-title {
+    font-size: 20px;
+  }
+
+  #changePasswordModal .btn {
+    padding: 11px 24px;
+    font-size: 14px;
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+  #changePasswordModal .modal-dialog {
+    margin: 0.5rem;
+    max-width: 100%;
+  }
+  
+  #changePasswordModal .modal-header {
+    padding: 20px;
+  }
+
+  #changePasswordModal .modal-body {
+    padding: 20px;
+  }
+
+  #changePasswordModal .modal-footer {
+    padding: 16px 20px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  #changePasswordModal .modal-title {
+    font-size: 18px;
+  }
+  
+  #changePasswordModal .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+  }
+
+  .password-input-group .form-control {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .password-input-group .input-group-text {
+    padding: 0 12px;
+  }
+
+  .btn-toggle-password {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 375px) {
+  #changePasswordModal .modal-header,
+  #changePasswordModal .modal-body {
+    padding: 16px;
+  }
+
+  .requirements-box {
+    padding: 16px;
+  }
+}
   </style>
 </head>
 <body>
@@ -565,40 +914,162 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 </div>
 
 <!-- Change Password Modal -->
-<div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <form id="changePasswordForm" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-key mr-2"></i>
+      <div class="modal-header bg-gradient-blue text-white">
+        <h5 class="modal-title" id="changePasswordModalLabel">
+          <i class="fas fa-shield-alt mr-2"></i>
           Change Password
         </h5>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
+      
       <div class="modal-body">
         <input type="hidden" name="auth_id" value="<?php echo $auth_id; ?>">
         
+        <!-- Current Password -->
         <div class="form-group">
-          <label><i class="fas fa-lock mr-1"></i> Current Password</label>
-          <input type="password" name="current_password" class="form-control" required placeholder="Enter your current password">
+          <label for="currentPassword">
+            <i class="fas fa-lock"></i>
+            Current Password
+          </label>
+          <div class="input-group password-input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">
+                <!-- <i class="fas fa-lock"></i> -->
+              </span>
+            </div>
+            <input type="password" 
+                   name="current_password" 
+                   id="currentPassword"
+                   class="form-control" 
+                   required 
+                   placeholder="Enter your current password"
+                   autocomplete="current-password">
+            <div class="input-group-append">
+              <button class="btn btn-toggle-password" 
+                      type="button" 
+                      onclick="togglePassword('currentPassword', this)"
+                      aria-label="Toggle password visibility">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
         </div>
         
+        <!-- New Password -->
         <div class="form-group">
-          <label><i class="fas fa-key mr-1"></i> New Password</label>
-          <input type="password" name="new_password" class="form-control" required placeholder="Enter new password">
+          <label for="newPassword">
+            <i class="fas fa-key"></i>
+            New Password
+          </label>
+          <div class="input-group password-input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">
+                <!-- <i class="fas fa-key"></i> -->
+              </span>
+            </div>
+            <input type="password" 
+                   name="new_password" 
+                   id="newPassword"
+                   class="form-control" 
+                   required 
+                   placeholder="Enter new password"
+                   autocomplete="new-password"
+                   oninput="validatePassword()">
+            <div class="input-group-append">
+              <button class="btn btn-toggle-password" 
+                      type="button" 
+                      onclick="togglePassword('newPassword', this)"
+                      aria-label="Toggle password visibility">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Password Strength Indicator -->
+          <div class="strength-container">
+            <div class="strength-header">
+              <span class="strength-label">Password Strength</span>
+              <span id="strengthText"></span>
+            </div>
+            <div class="progress password-progress">
+              <div id="strengthBar" 
+                   class="progress-bar" 
+                   role="progressbar" 
+                   style="width: 0%"
+                   aria-valuenow="0" 
+                   aria-valuemin="0" 
+                   aria-valuemax="100">
+              </div>
+            </div>
+          </div>
+          
+          <!-- Password Requirements -->
+          <div class="requirements-box">
+            <div class="requirements-title">
+              <i class="fas fa-info-circle"></i>
+              Password Requirements
+            </div>
+            <div class="password-requirements">
+              <small id="req-length">
+                <i class="fas fa-circle"></i> At least 8 characters
+              </small>
+              <small id="req-number">
+                <i class="fas fa-circle"></i> At least 1 number
+              </small>
+              <small id="req-uppercase">
+                <i class="fas fa-circle"></i> At least 1 uppercase letter
+              </small>
+              <small id="req-lowercase">
+                <i class="fas fa-circle"></i> At least 1 lowercase letter
+              </small>
+            </div>
+          </div>
         </div>
         
-        <div class="form-group">
-          <label><i class="fas fa-check-circle mr-1"></i> Confirm New Password</label>
-          <input type="password" name="confirm_password" class="form-control" required placeholder="Confirm new password">
+        <!-- Confirm Password -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="confirmPassword">
+            <i class="fas fa-check-circle"></i>
+            Confirm New Password
+          </label>
+          <div class="input-group password-input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">
+                <!-- <i class="fas fa-check-circle"></i> -->
+              </span>
+            </div>
+            <input type="password" 
+                   name="confirm_password" 
+                   id="confirmPassword"
+                   class="form-control" 
+                   required 
+                   placeholder="Confirm new password"
+                   autocomplete="new-password"
+                   oninput="checkPasswordMatch()">
+            <div class="input-group-append">
+              <button class="btn btn-toggle-password" 
+                      type="button" 
+                      onclick="togglePassword('confirmPassword', this)"
+                      aria-label="Toggle password visibility">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <small id="matchMessage"></small>
         </div>
       </div>
+      
       <div class="modal-footer">
-        <button type="submit" class="btn btn-success">
-          <i class="fas fa-check mr-2"></i> Change Password
-        </button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+        <button type="button" class="btn btn-light" data-dismiss="modal">
           <i class="fas fa-times mr-2"></i> Cancel
+        </button>
+        <button type="submit" id="submitBtn" class="btn btn-primary" disabled>
+          <i class="fas fa-check mr-2"></i> Change Password
         </button>
       </div>
     </form>
@@ -613,7 +1084,7 @@ $(function(){
   $("#updateProfileForm").on("submit", function(e){
     e.preventDefault();
     $.ajax({
-      url: 'update_profile.php',
+      url: '../update_profile.php',
       type: 'POST',
       data: $(this).serialize(),
       dataType: 'json',
@@ -645,7 +1116,7 @@ $(function(){
   $("#changePasswordForm").on("submit", function(e){
     e.preventDefault();
     $.ajax({
-      url: 'change_password.php',
+      url: '../change_password.php',
       type: 'POST',
       data: $(this).serialize(),
       dataType: 'json',
@@ -682,6 +1153,129 @@ $(function(){
       }
     });
   });
+});
+function togglePassword(fieldId, button) {
+  const field = document.getElementById(fieldId);
+  const icon = button.querySelector('i');
+  
+  if (field.type === 'password') {
+    field.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    field.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  }
+}
+
+function validatePassword() {
+  const password = document.getElementById('newPassword').value;
+  const strengthBar = document.getElementById('strengthBar');
+  const strengthText = document.getElementById('strengthText');
+  
+  // Check requirements
+  const hasLength = password.length >= 8;
+  const hasNumber = /\d/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  
+  // Update requirement indicators
+  updateRequirement('req-length', hasLength);
+  updateRequirement('req-number', hasNumber);
+  updateRequirement('req-uppercase', hasUppercase);
+  updateRequirement('req-lowercase', hasLowercase);
+  
+  // Calculate strength
+  let strength = 0;
+  if (hasLength) strength++;
+  if (hasNumber) strength++;
+  if (hasUppercase) strength++;
+  if (hasLowercase) strength++;
+  if (password.length >= 12) strength++;
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+  
+  // Update strength bar
+  const percentage = (strength / 6) * 100;
+  strengthBar.style.width = percentage + '%';
+  
+  if (strength <= 2) {
+    strengthBar.className = 'progress-bar bg-danger';
+    strengthText.textContent = 'Weak';
+    strengthText.className = 'text-danger';
+  } else if (strength <= 4) {
+    strengthBar.className = 'progress-bar bg-warning';
+    strengthText.textContent = 'Medium';
+    strengthText.className = 'text-warning';
+  } else {
+    strengthBar.className = 'progress-bar bg-success';
+    strengthText.textContent = 'Strong';
+    strengthText.className = 'text-success';
+  }
+  
+  checkPasswordMatch();
+  updateSubmitButton();
+}
+
+function updateRequirement(elementId, met) {
+  const element = document.getElementById(elementId);
+  if (met) {
+    element.classList.add('met');
+  } else {
+    element.classList.remove('met');
+  }
+}
+
+function checkPasswordMatch() {
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const matchMessage = document.getElementById('matchMessage');
+  
+  if (confirmPassword.length > 0) {
+    if (newPassword === confirmPassword) {
+      matchMessage.innerHTML = '<i class="fas fa-check-circle text-success"></i> Passwords match';
+      matchMessage.className = 'text-success d-block';
+    } else {
+      matchMessage.innerHTML = '<i class="fas fa-times-circle text-danger"></i> Passwords do not match';
+      matchMessage.className = 'text-danger d-block';
+    }
+  } else {
+    matchMessage.innerHTML = '';
+  }
+  
+  updateSubmitButton();
+}
+
+function updateSubmitButton() {
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const submitBtn = document.getElementById('submitBtn');
+  
+  // Check all requirements
+  const hasLength = newPassword.length >= 8;
+  const hasNumber = /\d/.test(newPassword);
+  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasLowercase = /[a-z]/.test(newPassword);
+  const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
+  
+  // Enable submit button only if all requirements are met
+  if (hasLength && hasNumber && hasUppercase && hasLowercase && passwordsMatch) {
+    submitBtn.disabled = false;
+  } else {
+    submitBtn.disabled = true;
+  }
+}
+
+// Reset form when modal is closed
+$('#changePasswordModal').on('hidden.bs.modal', function () {
+  document.getElementById('changePasswordForm').reset();
+  document.getElementById('strengthBar').style.width = '0%';
+  document.getElementById('strengthText').textContent = '';
+  document.querySelectorAll('.password-requirements small').forEach(el => {
+    el.classList.remove('met');
+  });
+  document.getElementById('matchMessage').innerHTML = '';
+  document.getElementById('submitBtn').disabled = true;
 });
 </script>
 </body>

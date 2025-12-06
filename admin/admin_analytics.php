@@ -29,9 +29,9 @@ $todaysAppointments = getCount($conn, "SELECT COUNT(*) FROM appointments WHERE D
 $registeredResidents = getCount($conn, "SELECT COUNT(*) FROM auth WHERE role='Resident'");
 $lguPersonnel = getCount($conn, "SELECT COUNT(*) FROM auth WHERE role='LGU Personnel'");
 $totalDepartments = getCount($conn, "SELECT COUNT(*) FROM departments");
-$totalFeedbacks = getCount($conn, "SELECT COUNT(*) FROM feedback");
-$totalCommendations = getCount($conn, "SELECT COUNT(*) FROM commendations");
-$totalComplaints = getCount($conn, "SELECT COUNT(*) FROM complaints");
+// $totalFeedbacks = getCount($conn, "SELECT COUNT(*) FROM feedback");
+// $totalCommendations = getCount($conn, "SELECT COUNT(*) FROM commendations");
+// $totalComplaints = getCount($conn, "SELECT COUNT(*) FROM complaints");
 
 // ====== APPOINTMENTS BY DEPARTMENT ======
 $deptLabels = [];
@@ -540,7 +540,7 @@ canvas {
 </div>
 
 <!-- Feedback Row -->
-<div class="summary small-cards">
+<!-- <div class="summary small-cards">
     <div class="summary-card orange small">
         <div class="icon"><i class='bx bx-message-detail'></i></div>
         <div class="value"><?= $totalFeedbacks ?></div>
@@ -556,7 +556,7 @@ canvas {
         <div class="value"><?= $totalComplaints ?></div>
         <div class="label">Complaints</div>
     </div>
-</div>
+</div> -->
 
 <!-- Charts Section -->
 <div class="charts">

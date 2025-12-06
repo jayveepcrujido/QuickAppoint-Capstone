@@ -20,7 +20,7 @@ $residentId = $resident['id'];
 
 // ✅ Fetch completed appointments
 $queryCompleted = "
-    SELECT a.id, a.transaction_id, a.scheduled_for, d.name AS department_name, s.service_name
+    SELECT a.id, a.transaction_id, a.scheduled_for, a.has_sent_feedback, d.name AS department_name, s.service_name
     FROM appointments a
     JOIN departments d ON a.department_id = d.id
     JOIN department_services s ON a.service_id = s.id
@@ -277,6 +277,36 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
         opacity: 0.8;
     }
 
+    /* Feedback Button */
+    .feedback-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        border: none;
+        cursor: pointer;
+    }
+
+    .feedback-btn:hover {
+        background: linear-gradient(135deg, #2980b9, #21618c);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .feedback-btn i {
+        font-size: 1rem;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
         .appointments-container {
@@ -339,6 +369,13 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
 
         .schedule-date {
             font-size: 0.95rem;
+        }
+
+        .feedback-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.85rem;
         }
     }
 
@@ -433,6 +470,18 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
                 </div>
+
+            <?php if ($appt['has_sent_feedback'] == 1): ?>
+                <button class="feedback-btn" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); cursor: not-allowed; opacity: 0.7;" disabled>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Feedback Already Submitted</span>
+                </button>
+            <?php else: ?>
+                <a href="feedback_form.php?appointment_id=<?= $appt['id'] ?>" class="feedback-btn">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>Answer Feedback</span>
+                </a>
+            <?php endif; ?>
             </div>
         <?php endforeach; ?>
     <?php endif; ?>

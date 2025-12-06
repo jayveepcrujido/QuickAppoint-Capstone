@@ -304,7 +304,7 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
     <!-- Profile Dropdown (Bootstrap-native) -->
     <div class="dropdown">
         <a href="#" class="d-flex align-items-center text-decoration-none" id="profileDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class='bx bx-user-circle text-primary' style="font-size: 40px; cursor:pointer;"></i>
+            <i class='bx bx-user-circle text-light' style="font-size: 40px; cursor:pointer;"></i>
         </a>
         <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="profileDropdown">
             <a href="#" class="dropdown-item d-flex align-items-center" onclick="loadContent('../view_profile.php')">

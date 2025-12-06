@@ -1,57 +1,68 @@
 <?php
 session_start();
-include '../conn.php';
 
-header('Content-Type: application/json');
+// --- IMPORTANT ---
+// Using the PDO connection file
+include '../conn.php'; 
+// ---------------
 
 // Check if user is logged in
 if (!isset($_SESSION['auth_id'])) {
-    echo json_encode(['hasNew' => false, 'count' => 0]);
-    exit;
+    http_response_code(403);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit();
 }
 
 $authId = $_SESSION['auth_id'];
 
+// --- ADDED ---
+// Close the session to prevent blocking other requests
+session_write_close(); 
+// --- END ---
+
+$unreadCount = 0;
+$residentId = null;
+
 try {
-    // Get personnel_id from lgu_personnel table using auth_id
-    $personnelStmt = $pdo->prepare("SELECT id FROM residents WHERE auth_id = ? LIMIT 1");
-    $personnelStmt->execute([$authId]);
-    $personnelData = $personnelStmt->fetch(PDO::FETCH_ASSOC);
+    // Step 1: Get the resident_id from auth_id 
+    // This is still needed to link auth to the appointments table
+    $residentStmt = $pdo->prepare("SELECT id FROM residents WHERE auth_id = ? LIMIT 1");
+    $residentStmt->execute([$authId]);
+    $residentData = $residentStmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$personnelData) {
-        echo json_encode(['hasNew' => false, 'count' => 0]);
-        exit;
+    if (!$residentData) {
+        // Can't find resident, so can't find notifications
+        http_response_code(404);
+        echo json_encode(['error' => 'Resident profile not found']);
+        exit();
     }
     
-    $personnelId = $personnelData['id'];
+    $residentId = $residentData['id'];
+
+    // Step 2: Count unseen completed appointments from the 'appointments' table
+    // This query is now changed to use 'is_seen_by_resident'
+    $sql = "SELECT COUNT(*) as count 
+            FROM appointments 
+            WHERE resident_id = ? 
+            AND status = 'Completed'
+            AND is_seen_by_resident = 0"; // Check for unseen completed appointments
+            
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$residentId]);
     
-    // Check for unread notifications for this personnel
-    // Join with appointments to ensure we only count notifications for appointments assigned to this personnel
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as unread_count 
-        FROM notifications n
-        INNER JOIN appointments a ON n.appointment_id = a.id
-        WHERE a.resident_id = ? AND n.is_read = 0
-    ");
-    
-    $stmt->execute([$personnelId]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    $unreadCount = (int)$result['unread_count'];
-    
-    echo json_encode([
-        'hasNew' => $unreadCount > 0,
-        'count' => $unreadCount,
-        'success' => true
-    ]);
-    
-} catch (PDOException $e) {
-    error_log("Error checking notifications: " . $e->getMessage());
-    echo json_encode([
-        'hasNew' => false, 
-        'count' => 0,
-        'success' => false,
-        'error' => 'Database error'
-    ]);
+    // fetchColumn() is efficient for getting a single value
+    $unreadCount = (int)$stmt->fetchColumn(); 
+
+    // Send the count back as JSON
+    header('Content-Type: application/json');
+    echo json_encode(['unreadCount' => $unreadCount]);
+
+} catch (PDOException $e) { // Catch PDOException
+    // Handle database errors
+    http_response_code(500);
+    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
 }
+
 ?>
+
+
