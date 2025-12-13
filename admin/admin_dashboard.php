@@ -657,19 +657,23 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
             <a href="#" class="nav_link" onclick="loadContent('admin_analytics.php')">
                 <i class='bx bx-home-alt'></i> <span>Dashboard</span>
             </a>
+            <a href="#" class="nav_link" onclick="loadContent('GeoMap.php')">
+                <i class='bx bx-home-alt'></i> <span>Appointments GeoMap</span>
+            </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_create_lgu_personnel.php')">
                 <i class='bx bx-user-plus'></i> <span>Manage LGU Personnel</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_manage_departments.php')">
                 <i class='bx bx-building-house'></i> <span>Manage Department</span>
             </a>
-            <a href="#" class="nav_link" onclick="loadContent('admin_view_feedback.php')">
-                <i class='bx bx-message-rounded-dots'></i> <span>View Feedbacks</span>
             <a href="#" class="nav_link" onclick="loadContent('admin_view_appointments.php')">
                 <i class='bx bx-calendar-event'></i> <span>View Appointments</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_manage_residents_accounts.php')">
                 <i class='bx bx-group'></i> <span>Manage Residents Accounts</span>
+            </a>
+            <a href="#" class="nav_link" onclick="loadContent('admin_view_feedback.php')">
+                <i class='bx bx-message-rounded-dots'></i> <span>View Feedbacks</span>
             </a>
             <a href="#" class="nav_link" data-toggle="modal" data-target="#logoutModal">
                 <i class='bx bx-log-out'></i> <span>Logout</span>
