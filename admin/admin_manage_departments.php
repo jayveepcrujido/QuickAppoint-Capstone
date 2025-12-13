@@ -1040,7 +1040,7 @@ while ($row = $stmt->fetch()) {
             <!-- Edit Modal -->
             <div class="modal fade" id="editModal<?= $d['id'] ?>" tabindex="-1">
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <form class="modal-content" method="post" action="ajax_update_department.php">
+                    <form class="modal-content" method="post" action="ajax/ajax_update_department.php">
                         <div class="modal-header warning">
                             <h5 class="modal-title">
                                 <i class='bx bx-edit'></i>
@@ -1302,7 +1302,7 @@ while ($row = $stmt->fetch()) {
         $('#addForm').submit(function(e) {
             e.preventDefault();
             if (confirm("Add this department and services?")) {
-                $.post('ajax_add_department_with_services.php', $(this).serialize(), function(response) {
+                $.post('ajax/ajax_add_department_with_services.php', $(this).serialize(), function(response) {
                     location.reload();
                 }).fail(function(xhr) {
                     alert("Error: " + xhr.responseText);
@@ -1342,7 +1342,7 @@ while ($row = $stmt->fetch()) {
         });
 
         // Submit Edit Forms
-        $('form[action="ajax_update_department.php"]').on('submit', function(e) {
+        $('form[action=ajax/"ajax_update_department.php"]').on('submit', function(e) {
             e.preventDefault();
             const form = $(this);
             if (confirm("Save changes to this department?")) {

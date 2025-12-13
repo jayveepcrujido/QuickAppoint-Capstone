@@ -9,17 +9,22 @@ include '../conn.php';
 // Fetch departments
 $departments = $pdo->query("SELECT id, name FROM departments ORDER BY name ASC")->fetchAll();
 
-// Fetch LGU Personnel (joined with auth to get email)
+// Fetch LGU Personnel (joined with auth to get email) - UPDATED QUERY
 $stmt = $pdo->prepare("
     SELECT lp.id, lp.first_name, lp.middle_name, lp.last_name, lp.department_id, 
+           lp.is_department_head, lp.created_by_personnel_id,
            a.email, d.name AS dept_name 
     FROM lgu_personnel lp
     JOIN auth a ON lp.auth_id = a.id
     LEFT JOIN departments d ON lp.department_id = d.id
     WHERE a.role = 'LGU Personnel'
+    ORDER BY lp.is_department_head DESC, lp.created_at DESC
 ");
 $stmt->execute();
 $personnel = $stmt->fetchAll();
+
+// Count department heads
+$dept_heads_count = count(array_filter($personnel, fn($p) => $p['is_department_head'] == 1));
 ?>
 
 <!DOCTYPE html>
@@ -239,6 +244,38 @@ $personnel = $stmt->fetchAll();
             color: white;
         }
 
+        /* NEW: Badge for department head */
+        .badge-head {
+            padding: 0.35rem 0.75rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-left: 0.5rem;
+        }
+
+        .badge-created-by {
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .badge-admin {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-personnel {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
         .btn-action {
             width: 36px;
             height: 36px;
@@ -308,7 +345,7 @@ $personnel = $stmt->fetchAll();
         .form-control-custom {
             border: 2px solid #e2e8f0;
             border-radius: 10px;
-            padding: 0.1rem;
+            padding: 0.75rem;
             transition: all 0.3s ease;
         }
 
@@ -343,6 +380,37 @@ $personnel = $stmt->fetchAll();
             font-size: 4rem;
             margin-bottom: 1rem;
             opacity: 0.5;
+        }
+
+        /* NEW: Checkbox styling */
+        .custom-control-label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .dept-head-checkbox {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .alert-info-custom {
+            background: #e0f2fe;
+            border: 2px solid #7dd3fc;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+
+        .alert-info-custom i {
+            color: #0284c7;
+            font-size: 1.25rem;
+            margin-top: 0.125rem;
         }
 
         /* Responsive Design */
@@ -436,9 +504,9 @@ $personnel = $stmt->fetchAll();
     </div>
 
     <div class="container">
-        <!-- Stats Card -->
+        <!-- Stats Card - UPDATED -->
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="stats-card">
                     <div class="d-flex align-items-center">
                         <div class="icon">
@@ -451,7 +519,7 @@ $personnel = $stmt->fetchAll();
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="stats-card">
                     <div class="d-flex align-items-center">
                         <div class="icon" style="background: var(--success-gradient);">
@@ -464,7 +532,20 @@ $personnel = $stmt->fetchAll();
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <i class='bx bx-crown'></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3><?= $dept_heads_count ?></h3>
+                            <p>Department Heads</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
                 <div class="stats-card">
                     <div class="d-flex align-items-center">
                         <div class="icon" style="background: var(--danger-gradient);">
@@ -503,6 +584,7 @@ $personnel = $stmt->fetchAll();
                                 <th>Full Name</th>
                                 <th>Email Address</th>
                                 <th>Department</th>
+                                <th>Role</th>
                                 <th class="text-center">Actions</th>
                             </tr>
                         </thead>
@@ -511,12 +593,32 @@ $personnel = $stmt->fetchAll();
                                 <tr data-id="<?= $p['id'] ?>">
                                     <td data-label="Full Name">
                                         <strong><?= htmlspecialchars("{$p['first_name']} {$p['middle_name']} {$p['last_name']}") ?></strong>
+                                        <?php if ($p['is_department_head']): ?>
+                                            <span class="badge-head">
+                                                <i class='bx bx-crown'></i> Head
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="Email">
                                         <?= htmlspecialchars($p['email']) ?>
                                     </td>
                                     <td data-label="Department">
                                         <span class="badge-dept"><?= htmlspecialchars($p['dept_name']) ?></span>
+                                    </td>
+                                    <td data-label="Role">
+                                        <?php if ($p['is_department_head']): ?>
+                                            <span class="badge-created-by badge-admin">
+                                                <i class='bx bx-shield-alt'></i> Department Head
+                                            </span>
+                                        <?php elseif ($p['created_by_personnel_id']): ?>
+                                            <span class="badge-created-by badge-personnel">
+                                                <i class='bx bx-user'></i> Co-Personnel
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge-created-by" style="background: #e0e7ff; color: #4338ca;">
+                                                <i class='bx bx-user-check'></i> Personnel
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="Actions" class="text-center">
                                         <button class="btn btn-action btn-edit editBtn"
@@ -526,11 +628,13 @@ $personnel = $stmt->fetchAll();
                                             data-middle="<?= htmlspecialchars($p['middle_name']) ?>"
                                             data-last="<?= htmlspecialchars($p['last_name']) ?>"
                                             data-email="<?= htmlspecialchars($p['email']) ?>"
-                                            data-dept="<?= $p['department_id'] ?>">
+                                            data-dept="<?= $p['department_id'] ?>"
+                                            data-is-head="<?= $p['is_department_head'] ?>">
                                             <i class='bx bx-edit'></i>
                                         </button>
                                         <button class="btn btn-action btn-delete deleteBtn" 
-                                                data-id="<?= $p['id'] ?>" 
+                                                data-id="<?= $p['id'] ?>"
+                                                data-name="<?= htmlspecialchars("{$p['first_name']} {$p['last_name']}") ?>"
                                                 title="Delete Personnel">
                                             <i class='bx bx-trash'></i>
                                         </button>
@@ -551,7 +655,7 @@ $personnel = $stmt->fetchAll();
         </div>
     </div>
 
-    <!-- Add Modal -->
+    <!-- Add Modal - UPDATED -->
     <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form id="addForm" class="modal-content">
@@ -580,7 +684,8 @@ $personnel = $stmt->fetchAll();
                     </div>
                     <div class="form-group">
                         <label>Password <span class="text-danger">*</span></label>
-                        <input name="password" type="password" class="form-control form-control-custom" placeholder="Enter password" required>
+                        <input name="password" type="password" class="form-control form-control-custom" placeholder="Enter password" minlength="6" required>
+                        <small class="form-text text-muted">Minimum 6 characters</small>
                     </div>
                     <div class="form-group">
                         <label>Department <span class="text-danger">*</span></label>
@@ -590,6 +695,18 @@ $personnel = $stmt->fetchAll();
                                 <option value="<?= $d['id'] ?>"><?= htmlspecialchars($d['name']) ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    
+                    <div class="dept-head-checkbox">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="is_department_head" name="is_department_head">
+                            <label class="custom-control-label" for="is_department_head">
+                                <strong><i class='bx bx-crown'></i> Set as Department Head</strong>
+                            </label>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            <i class='bx bx-info-circle'></i> Department heads can create and manage co-personnel within their department
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -601,7 +718,7 @@ $personnel = $stmt->fetchAll();
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Modal - UPDATED -->
     <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <form id="editForm" class="modal-content">
@@ -611,6 +728,14 @@ $personnel = $stmt->fetchAll();
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert-info-custom" id="edit-info-box" style="display: none;">
+                        <i class='bx bx-info-circle'></i>
+                        <div>
+                            <strong>Note:</strong>
+                            <p class="mb-0" style="font-size: 0.9rem;" id="edit-info-text"></p>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label>First Name <span class="text-danger">*</span></label>
                         <input name="first_name" class="form-control form-control-custom" placeholder="Enter first name" required>
@@ -636,6 +761,18 @@ $personnel = $stmt->fetchAll();
                         <label>Email Address <span class="text-danger">*</span></label>
                         <input name="email" type="email" class="form-control form-control-custom" placeholder="Enter email address" required>
                     </div>
+                    
+                    <div class="dept-head-checkbox">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="edit_is_department_head" name="is_department_head">
+                            <label class="custom-control-label" for="edit_is_department_head">
+                                <strong><i class='bx bx-crown'></i> Department Head Status</strong>
+                            </label>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            <i class='bx bx-info-circle'></i> Check to grant or maintain department head privileges
+                        </small>
+                    </div>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="submit" class="btn btn-submit">
@@ -646,64 +783,196 @@ $personnel = $stmt->fetchAll();
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Search functionality
-        $("#searchInput").on("keyup", function() {
-            const value = $(this).val().toLowerCase();
-            $("#personnelTable tbody tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Search functionality
+$("#searchInput").on("keyup", function() {
+    const value = $(this).val().toLowerCase();
+    $("#personnelTable tbody tr").filter(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+    });
+});
+
+// Function to reload just the personnel table
+function loadPersonnelTable() {
+    $.ajax({
+        url: 'admin_create_lgu_personnel.php',
+        method: 'GET',
+        success: function(html) {
+            // Extract and update the table
+            const newTable = $(html).find('#personnelTable tbody').html();
+            $('#personnelTable tbody').html(newTable);
+            
+            // Update stats cards
+            const newStats = $(html).find('.stats-card h3');
+            $('.stats-card h3').each(function(index) {
+                $(this).text($(newStats[index]).text());
             });
-        });
+        },
+        error: function() {
+            console.error('Failed to reload table');
+            // Fallback to full page reload if dynamic load fails
+            location.reload();
+        }
+    });
+}
 
-        // ADD with confirmation
-        $("#addForm").submit(function(e) {
-            e.preventDefault();
-            if (confirm("Are you sure you want to add this personnel?")) {
-                $.post("ajax_create_personnel.php", $(this).serialize(), function(res) {
-                    location.reload();
-                }).fail(function(xhr) {
-                    alert("Error: " + xhr.responseText);
-                });
+// ADD with validation and dynamic update
+$("#addForm").submit(function(e) {
+    e.preventDefault();
+    
+    const isDeptHead = $('#is_department_head').is(':checked');
+    
+    let confirmMsg = "Are you sure you want to add this personnel";
+    if (isDeptHead) {
+        confirmMsg += " as a Department Head";
+    }
+    confirmMsg += "?";
+    
+    if (confirm(confirmMsg)) {
+        $.ajax({
+            url: "ajax/ajax_create_personnel.php",
+            method: "POST",
+            data: $(this).serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Close modal properly and remove backdrop
+                    $('#addModal').modal('hide');
+                    $('#addForm')[0].reset();
+                    
+                    // Remove modal backdrop and reset body
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('padding-right', '');
+                    
+                    alert(response.message);
+                    
+                    // Now reload the table
+                    loadPersonnelTable();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    alert('Error: ' + response.message);
+                } catch(e) {
+                    console.error('Raw error:', xhr.responseText);
+                    alert('An error occurred. Check console for details.');
+                }
             }
         });
+    }
+});
 
-        // FILL EDIT MODAL
-        $(document).on("click", ".editBtn", function() {
-            const btn = $(this);
-            $("#editForm [name=id]").val(btn.data("id"));
-            $("#editForm [name=first_name]").val(btn.data("first"));
-            $("#editForm [name=middle_name]").val(btn.data("middle"));
-            $("#editForm [name=last_name]").val(btn.data("last"));
-            $("#editForm [name=email]").val(btn.data("email"));
-            $("#editForm [name=department_id]").val(btn.data("dept"));
-            $("#editModal").modal("show");
-        });
+// FILL EDIT MODAL
+$(document).on("click", ".editBtn", function() {
+    const btn = $(this);
+    const isDeptHead = btn.data("is-head") == 1;
+    
+    $("#editForm [name=id]").val(btn.data("id"));
+    $("#editForm [name=first_name]").val(btn.data("first"));
+    $("#editForm [name=middle_name]").val(btn.data("middle"));
+    $("#editForm [name=last_name]").val(btn.data("last"));
+    $("#editForm [name=email]").val(btn.data("email"));
+    $("#editForm [name=department_id]").val(btn.data("dept"));
+    
+    // Set department head checkbox
+    $("#edit_is_department_head").prop('checked', isDeptHead);
+    
+    // Show info if department head
+    if (isDeptHead) {
+        $("#edit-info-box").show();
+        $("#edit-info-text").html("This personnel is currently a <strong>Department Head</strong>. Unchecking will remove their ability to manage co-personnel.");
+    } else {
+        $("#edit-info-box").hide();
+    }
+    
+    $("#editModal").modal("show");
+});
 
-        // EDIT with confirmation
-        $("#editForm").submit(function(e) {
-            e.preventDefault();
-            if (confirm("Are you sure you want to update this personnel's details?")) {
-                $.post("ajax_update_personnel.php", $(this).serialize(), function(res) {
-                    location.reload();
-                }).fail(function(xhr) {
-                    alert("Error: " + xhr.responseText);
-                });
+// EDIT with validation and dynamic update
+$("#editForm").submit(function(e) {
+    e.preventDefault();
+    
+    const isDeptHead = $('#edit_is_department_head').is(':checked');
+    let confirmMsg = "Are you sure you want to update this personnel";
+    if (isDeptHead) {
+        confirmMsg += " with Department Head status";
+    }
+    confirmMsg += "?";
+    
+    if (confirm(confirmMsg)) {
+        $.ajax({
+            url: "ajax/ajax_update_personnel.php",
+            method: "POST",
+            data: $(this).serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Close modal properly and remove backdrop
+                    $('#editModal').modal('hide');
+                    
+                    // Remove modal backdrop and reset body
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('padding-right', '');
+                    
+                    alert(response.message);
+                    
+                    // Reload the table dynamically
+                    loadPersonnelTable();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    alert('Error: ' + response.message);
+                } catch(e) {
+                    alert('Error: ' + xhr.responseText);
+                }
             }
         });
+    }
+});
 
-        // DELETE
-        $(document).on("click", ".deleteBtn", function() {
-            if (confirm("Are you sure you want to delete this personnel?")) {
-                const id = $(this).data("id");
-                $.post("ajax_delete_personnel.php", { id }, function(res) {
-                    location.reload();
-                }).fail(function(xhr) {
-                    alert("Error: " + xhr.responseText);
-                });
+// DELETE with dynamic update
+$(document).on("click", ".deleteBtn", function() {
+    const id = $(this).data("id");
+    const name = $(this).data("name");
+    
+    if (confirm("Are you sure you want to delete " + name + "?\n\nThis will permanently remove their account and all associated data.")) {
+        $.ajax({
+            url: "ajax/ajax_delete_personnel.php",
+            method: "POST",
+            data: { id: id },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    
+                    // Reload the table dynamically (no modal to close for delete)
+                    loadPersonnelTable();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    alert('Error: ' + response.message);
+                } catch(e) {
+                    alert('Error: ' + xhr.responseText);
+                }
             }
         });
-    </script>
+    }
+});
+</script>
 </body>
 </html>

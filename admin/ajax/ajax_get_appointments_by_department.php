@@ -6,7 +6,7 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
     exit();
 }
 
-include '../conn.php';
+include '../../conn.php';
 
 try {
     $departmentId = $_GET['department_id'] ?? '';

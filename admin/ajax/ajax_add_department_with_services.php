@@ -1,6 +1,6 @@
 <?php
 // ajax_add_department_with_services.php
-include '../conn.php';
+include '../../conn.php';
 
 $name = $_POST['name'] ?? '';
 $acronym = $_POST['acronym'] ?? null;

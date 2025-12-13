@@ -485,7 +485,7 @@ $recentAppointments = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
         const status = $('#statusFilter').val();
         
         $.ajax({
-            url: 'ajax_get_appointments_by_department.php',
+            url: 'ajax/ajax_get_appointments_by_department.php',
             method: 'GET',
             data: { 
                 department_id: departmentId,

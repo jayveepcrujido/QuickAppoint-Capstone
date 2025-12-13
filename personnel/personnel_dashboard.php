@@ -28,6 +28,21 @@ $dept_stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_i
 $dept_stmt->execute([$_SESSION['auth_id']]);
 $user_department_id = $dept_stmt->fetchColumn();
 
+// ADD THIS: Check if user is department head
+$is_dept_head_stmt = $pdo->prepare("
+    SELECT is_department_head, id 
+    FROM lgu_personnel 
+    WHERE auth_id = ? AND is_department_head = 1
+");
+$is_dept_head_stmt->execute([$_SESSION['auth_id']]);
+$dept_head_info = $is_dept_head_stmt->fetch(PDO::FETCH_ASSOC);
+$is_department_head = !empty($dept_head_info);
+$personnel_id = $dept_head_info['id'] ?? null;
+
+// Store in session for easier access
+$_SESSION['is_department_head'] = $is_department_head;
+$_SESSION['personnel_id'] = $personnel_id;
+
 // Get today's appointments
 $today = date('Y-m-d');
 $today_tasks = [];
@@ -453,199 +468,209 @@ if ($user_department_id) {
             }
         }
         /* My Tasks Today Section */
-.tasks-section {
-    background: white;
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: var(--card-shadow);
-    margin-bottom: 2rem;
-}
+        .tasks-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
 
-.tasks-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #f1f5f9;
-}
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
 
-.tasks-header h3 {
-    margin: 0;
-    color: var(--dark-color);
-    font-size: 1.5rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .tasks-header h3 {
+            margin: 0;
+            color: var(--dark-color);
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-.tasks-header .date-badge {
-    background: linear-gradient(135deg, #0D92F4, #27548A);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
+        .tasks-header .date-badge {
+            background: linear-gradient(135deg, #0D92F4, #27548A);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
 
-.task-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
+        .task-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
 
-.stat-card {
-    background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
-    border-radius: 12px;
-    padding: 1rem;
-    text-align: center;
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
-}
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
 
-.stat-card:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
+        .stat-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
 
-.stat-card .stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 0.25rem;
-}
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
 
-.stat-card .stat-label {
-    font-size: 0.85rem;
-    color: #64748b;
-    font-weight: 600;
-}
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+        }
 
-.task-item {
-    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-    border-left: 4px solid var(--primary-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
+        .task-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-left: 4px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
 
-.task-item:hover {
-    transform: translateX(5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
+        .task-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
 
-.task-item.status-confirmed {
-    border-left-color: var(--secondary-color);
-}
+        .task-item.status-confirmed {
+            border-left-color: var(--secondary-color);
+        }
 
-.task-item.status-pending {
-    border-left-color: var(--warning-color);
-}
+        .task-item.status-pending {
+            border-left-color: var(--warning-color);
+        }
 
-.task-time {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    background: linear-gradient(135deg, #0D92F4, #27548A);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
+        .task-time {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: linear-gradient(135deg, #0D92F4, #27548A);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
 
-.task-info {
-    margin-top: 0.5rem;
-}
+        .task-info {
+            margin-top: 0.5rem;
+        }
 
-.task-info h6 {
-    margin: 0 0 0.25rem 0;
-    color: var(--dark-color);
-    font-weight: 600;
-    font-size: 1rem;
-}
+        .task-info h6 {
+            margin: 0 0 0.25rem 0;
+            color: var(--dark-color);
+            font-weight: 600;
+            font-size: 1rem;
+        }
 
-.task-info p {
-    margin: 0;
-    color: #64748b;
-    font-size: 0.9rem;
-}
+        .task-info p {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
 
-.task-status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-top: 0.5rem;
-}
+        .task-status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
 
-.task-status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
-}
+        .task-status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
 
-.task-status-badge.confirmed {
-    background: #d1fae5;
-    color: #065f46;
-}
+        .task-status-badge.confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
 
-.no-tasks {
-    text-align: center;
-    padding: 2rem;
-    color: #94a3b8;
-}
+        .no-tasks {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
 
-.no-tasks i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    display: block;
-}
+        .no-tasks i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
 
-@media (max-width: 768px) {
-    .tasks-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .task-stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.5rem;
-    }
-    
-    .stat-card {
-        padding: 0.75rem 0.5rem;
-    }
-    
-    .stat-card .stat-number {
-        font-size: 1.5rem;
-    }
-    
-    .stat-card .stat-label {
-        font-size: 0.75rem;
-    }
-    
-    .task-item {
-        padding: 0.75rem;
-    }
-}
-.tasks-header:hover {
-    background-color: rgba(0, 0, 0, 0.02);
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-}
+        @media (max-width: 768px) {
+            .tasks-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .task-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+            }
+            
+            .stat-card {
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .stat-card .stat-number {
+                font-size: 1.5rem;
+            }
+            
+            .stat-card .stat-label {
+                font-size: 0.75rem;
+            }
+            
+            .task-item {
+                padding: 0.75rem;
+            }
+        }
+        .tasks-header:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
 
-.tasks-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .tasks-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Prevent Flatpickr calendars from lingering */
+        .flatpickr-calendar {
+            z-index: 9999 !important;
+        }
+
+        /* Hide any orphaned Flatpickr calendars */
+        body > .flatpickr-calendar:not(.open) {
+            display: none !important;
+        }
     </style>
 
 <script>
@@ -792,6 +817,43 @@ window.cleanupAllPages = function() {
     
     console.log('=== CLEANUP COMPLETE ===');
 };
+// Clean up specific page cleanup functions
+if (window.availableDatesCleanup && typeof window.availableDatesCleanup === 'function') {
+    console.log('Running availableDatesCleanup...');
+    try {
+        window.availableDatesCleanup();
+    } catch(e) {
+        console.error('Error in availableDatesCleanup:', e);
+    }
+}
+
+if (window.appointmentStatusCleanup && typeof window.appointmentStatusCleanup === 'function') {
+    console.log('Running appointmentStatusCleanup...');
+    try {
+        window.appointmentStatusCleanup();
+    } catch(e) {
+        console.error('Error in appointmentStatusCleanup:', e);
+    }
+}
+
+if (window.manageAppointmentsCleanup && typeof window.manageAppointmentsCleanup === 'function') {
+    console.log('Running manageAppointmentsCleanup...');
+    try {
+        window.manageAppointmentsCleanup();
+    } catch(e) {
+        console.error('Error in manageAppointmentsCleanup:', e);
+    }
+}
+
+// ADD THIS NEW CLEANUP
+if (window.feedbackPageCleanup && typeof window.feedbackPageCleanup === 'function') {
+    console.log('Running feedbackPageCleanup...');
+    try {
+        window.feedbackPageCleanup();
+    } catch(e) {
+        console.error('Error in feedbackPageCleanup:', e);
+    }
+}
 
         // Store the currently loaded page
         let currentPage = null;
@@ -845,130 +907,140 @@ window.cleanupAllPages = function() {
             }, 300000); // Ping every 5 minutes
         });
 
-        function loadContent(page) {
-            console.log('\n>>> NAVIGATION REQUEST: ' + page + ' <<<');
-            
-            // Prevent loading if already loading
-            if (isLoading) {
-                console.warn('⚠️ Already loading content, please wait...');
-                return false;
-            }
+function loadContent(page) {
+    console.log('\n>>> NAVIGATION REQUEST: ' + page + ' <<<');
+    
+    // Prevent loading if already loading
+    if (isLoading) {
+        console.warn('⚠️ Already loading content, please wait...');
+        return false;
+    }
 
-            // Prevent reloading the same page
-            if (currentPage === page) {
-                console.log('ℹ️ Already on page:', page);
-                return false;
-            }
+    // Prevent reloading the same page
+    if (currentPage === page) {
+        console.log('ℹ️ Already on page:', page);
+        return false;
+    }
 
-            console.log('✓ Navigation approved from', currentPage || 'homepage', 'to', page);
-            isLoading = true;
+    console.log('✓ Navigation approved from', currentPage || 'homepage', 'to', page);
+    isLoading = true;
+    
+    // Close sidebar on mobile after clicking
+    const nav = document.getElementById('nav-bar');
+    const overlay = document.getElementById('overlay');
+    if (nav && nav.classList.contains('show')) {
+        nav.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+    }
+    
+    // *** CRITICAL: CLEANUP EVERYTHING ***
+    console.log('🧹 Initiating comprehensive cleanup...');
+    window.cleanupAllPages();
+    
+    // Add cache buster to prevent cached content
+    const cacheBuster = '?_=' + new Date().getTime();
+    
+    // Clear content area immediately
+    const contentArea = $("#content-area");
+    contentArea.html(
+        '<div class="text-center p-5">' +
+        '<div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">' +
+        '<span class="sr-only">Loading...</span>' +
+        '</div>' +
+        '<p class="mt-3 font-weight-bold">Loading ' + page + '...</p>' +
+        '</div>'
+    );
+    
+    // Force a small delay to ensure cleanup is complete
+    setTimeout(function() {
+        console.log('📥 Loading content from:', page + cacheBuster);
+        
+        contentArea.load(page + cacheBuster, function(response, status, xhr) {
+            isLoading = false;
             
-            // Close sidebar on mobile after clicking
-            const nav = document.getElementById('nav-bar');
-            const overlay = document.getElementById('overlay');
-            if (nav && nav.classList.contains('show')) {
-                nav.classList.remove('show');
-                if (overlay) overlay.classList.remove('show');
-            }
-            
-            // *** CRITICAL: CLEANUP EVERYTHING ***
-            console.log('🧹 Initiating comprehensive cleanup...');
-            window.cleanupAllPages();
-            
-            // Add cache buster to prevent cached content
-            const cacheBuster = '?_=' + new Date().getTime();
-            
-            // Clear content area immediately
-            const contentArea = $("#content-area");
-            contentArea.html(
-                '<div class="text-center p-5">' +
-                '<div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">' +
-                '<span class="sr-only">Loading...</span>' +
-                '</div>' +
-                '<p class="mt-3 font-weight-bold">Loading ' + page + '...</p>' +
-                '</div>'
-            );
-            
-            // Force a small delay to ensure cleanup is complete
-            setTimeout(function() {
-                console.log('📥 Loading content from:', page + cacheBuster);
+            if (status === "error") {
+                console.error("❌ Error loading content:", xhr.status, xhr.statusText);
                 
-                contentArea.load(page + cacheBuster, function(response, status, xhr) {
-                    isLoading = false;
+                // Check if it's a session error
+                if (xhr.status === 403 || response.includes('Unauthorized') || response.includes('Session expired')) {
+                    contentArea.html(
+                        '<div class="alert alert-danger m-4">' +
+                        '<h4><i class="bx bx-error-circle"></i> Session Expired</h4>' +
+                        '<p>Your session has expired. Please log in again.</p>' +
+                        '<a href="../login.php" class="btn btn-primary">Go to Login</a>' +
+                        '</div>'
+                    );
+                    setTimeout(function() {
+                        window.location.href = '../login.php?timeout=1';
+                    }, 2000);
+                } else if (xhr.status === 404) {
+                    contentArea.html(
+                        '<div class="alert alert-warning m-4">' +
+                        '<h4><i class="bx bx-error"></i> Page Not Found</h4>' +
+                        '<p>The requested page could not be found: <strong>' + page + '</strong></p>' +
+                        '<button class="btn btn-primary" onclick="loadContent(\'personnel_analytics.php\')">Go to Dashboard</button>' +
+                        '</div>'
+                    );
+                    currentPage = null;
+                } else {
+                    contentArea.html(
+                        '<div class="alert alert-danger m-4">' +
+                        '<h4><i class="bx bx-error-circle"></i> Error Loading Content</h4>' +
+                        '<p>Failed to load the requested page. Please try again.</p>' +
+                        '<button class="btn btn-primary" onclick="location.reload()">Refresh Page</button>' +
+                        '</div>'
+                    );
+                    currentPage = null;
+                }
+            } else if (status === "success") {
+                console.log('✅ Content loaded successfully:', page);
+                currentPage = page;
+                
+                // Scroll to top of content area smoothly
+                $('html, body').animate({ scrollTop: 0 }, 300);
+                
+                // Give scripts time to initialize
+                setTimeout(function() {
+                    console.log('⚙️ Content initialization phase complete for:', page);
                     
-                    if (status === "error") {
-                        console.error("❌ Error loading content:", xhr.status, xhr.statusText);
-                        
-                        // Check if it's a session error
-                        if (xhr.status === 403 || response.includes('Unauthorized') || response.includes('Session expired')) {
-                            contentArea.html(
-                                '<div class="alert alert-danger m-4">' +
-                                '<h4><i class="bx bx-error-circle"></i> Session Expired</h4>' +
-                                '<p>Your session has expired. Please log in again.</p>' +
-                                '<a href="../login.php" class="btn btn-primary">Go to Login</a>' +
-                                '</div>'
-                            );
-                            setTimeout(function() {
-                                window.location.href = '../login.php?timeout=1';
-                            }, 2000);
-                        } else if (xhr.status === 404) {
-                            contentArea.html(
-                                '<div class="alert alert-warning m-4">' +
-                                '<h4><i class="bx bx-error"></i> Page Not Found</h4>' +
-                                '<p>The requested page could not be found: <strong>' + page + '</strong></p>' +
-                                '<button class="btn btn-primary" onclick="loadContent(\'personnel_analytics.php\')">Go to Dashboard</button>' +
-                                '</div>'
-                            );
-                            currentPage = null;
-                        } else {
-                            contentArea.html(
-                                '<div class="alert alert-danger m-4">' +
-                                '<h4><i class="bx bx-error-circle"></i> Error Loading Content</h4>' +
-                                '<p>Failed to load the requested page. Please try again.</p>' +
-                                '<button class="btn btn-primary" onclick="location.reload()">Refresh Page</button>' +
-                                '</div>'
-                            );
-                            currentPage = null;
+                    // *** NEW: Initialize page-specific functions ***
+                    
+                    // Initialize feedback page if it's loaded
+                    if (page.includes('personnel_view_feedbacks.php')) {
+                        console.log('📋 Initializing feedback page...');
+                        if (typeof window.initFeedbackPage === 'function') {
+                            window.initFeedbackPage();
                         }
-                    } else if (status === "success") {
-                        console.log('✅ Content loaded successfully:', page);
-                        currentPage = page;
-                        
-                        // Scroll to top of content area smoothly
-                        $('html, body').animate({ scrollTop: 0 }, 300);
-                        
-                        // Give scripts time to initialize
-                        setTimeout(function() {
-                            console.log('⚙️ Content initialization phase complete for:', page);
-                            
-                            // Special handling for create_available_dates page
-                            if (page.includes('create_available_dates.php')) {
-                                console.log('📅 Verifying calendar initialization...');
-                                
-                                setTimeout(function() {
-                                    if ($('#calendar').length > 0) {
-                                        if ($('#calendar').children().length === 0) {
-                                            console.warn('⚠️ Calendar empty, attempting manual init...');
-                                            if (window.availableDatesModule && 
-                                                typeof window.availableDatesModule.generateCalendar === 'function') {
-                                                const now = new Date();
-                                                window.availableDatesModule.generateCalendar(now.getMonth(), now.getFullYear());
-                                                window.availableDatesModule.loadExistingDates();
-                                                window.availableDatesModule.checkSubmitButton();
-                                            }
-                                        } else {
-                                            console.log('✓ Calendar initialized with', $('#calendar').children().length, 'elements');
-                                        }
-                                    }
-                                }, 300);
-                            }
-                        }, 200);
                     }
-                });
-            }, 150); // 150ms delay to ensure cleanup completes
-            
-            return false; // Prevent default link behavior
-        }
+                    
+                    // Special handling for create_available_dates page
+                    if (page.includes('create_available_dates.php')) {
+                        console.log('📅 Verifying calendar initialization...');
+                        
+                        setTimeout(function() {
+                            if ($('#calendar').length > 0) {
+                                if ($('#calendar').children().length === 0) {
+                                    console.warn('⚠️ Calendar empty, attempting manual init...');
+                                    if (window.availableDatesModule && 
+                                        typeof window.availableDatesModule.generateCalendar === 'function') {
+                                        const now = new Date();
+                                        window.availableDatesModule.generateCalendar(now.getMonth(), now.getFullYear());
+                                        window.availableDatesModule.loadExistingDates();
+                                        window.availableDatesModule.checkSubmitButton();
+                                    }
+                                } else {
+                                    console.log('✓ Calendar initialized with', $('#calendar').children().length, 'elements');
+                                }
+                            }
+                        }, 300);
+                    }
+                }, 200);
+            }
+        });
+    }, 150); // 150ms delay to ensure cleanup completes
+    
+    return false; // Prevent default link behavior
+}
 
         function toggleDropdown(id) {
             $("#" + id).slideToggle("fast");
@@ -1120,6 +1192,12 @@ window.cleanupAllPages = function() {
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('create_available_dates.php');">
                 <i class='bx bx-calendar-plus'></i> <span>Create Available Dates</span>
             </a>
+            <?php if ($is_department_head): ?>
+                <!-- ONLY SHOW THIS TO DEPARTMENT HEADS -->
+                <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_manage_co_personnel.php');">
+                    <i class='bx bx-user-plus'></i> <span>Manage Co-Personnel</span>
+                </a>
+            <?php endif; ?>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_view_feedbacks.php');">
                 <i class='bx bx-message-star'></i> <span>View Feedbacks</span>
             </a>

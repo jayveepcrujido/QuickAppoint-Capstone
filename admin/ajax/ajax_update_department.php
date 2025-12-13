@@ -1,6 +1,6 @@
 <?php
 // ajax_update_department.php
-include '../conn.php';
+include '../../conn.php';
 header('Content-Type: application/json');
 
 // Validate POST

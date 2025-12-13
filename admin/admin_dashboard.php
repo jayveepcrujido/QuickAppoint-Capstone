@@ -242,57 +242,385 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
                 transform: translateY(0);
             }
         }
+        /* Prevent Flatpickr calendars from lingering */
+        .flatpickr-calendar {
+            z-index: 9999 !important;
+        }
+
+        /* Hide any orphaned Flatpickr calendars that aren't open */
+        body > .flatpickr-calendar:not(.open) {
+            display: none !important;
+        }
+
+        /* Extra safety: hide all Flatpickr calendars by default */
+        .flatpickr-calendar:not(.open):not(.inline) {
+            display: none !important;
+            visibility: hidden !important;
+        }
     </style>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const toggle = document.getElementById('header-toggle');
-            const nav = document.getElementById('nav-bar');
-            const overlay = document.getElementById('overlay');
+<script>
+    // Global cleanup registry
+    window.pageCleanupRegistry = {
+        intervals: [],
+        timeouts: [],
+        eventHandlers: [],
+        ajaxRequests: []
+    };
 
-            // Toggle sidebar
+    // Override setInterval to track all intervals
+    const originalSetInterval = window.setInterval;
+    window.setInterval = function(fn, delay) {
+        const id = originalSetInterval(fn, delay);
+        window.pageCleanupRegistry.intervals.push(id);
+        return id;
+    };
+
+    // Override setTimeout to track all timeouts
+    const originalSetTimeout = window.setTimeout;
+    window.setTimeout = function(fn, delay) {
+        const id = originalSetTimeout(fn, delay);
+        window.pageCleanupRegistry.timeouts.push(id);
+        return id;
+    };
+
+    // Track jQuery AJAX requests
+    if (typeof jQuery !== 'undefined') {
+        $(document).ajaxSend(function(event, jqXHR, settings) {
+            window.pageCleanupRegistry.ajaxRequests.push(jqXHR);
+        });
+    }
+
+    // Universal cleanup function
+    window.cleanupAllPages = function() {
+        console.log('=== STARTING UNIVERSAL CLEANUP ===');
+        
+        // Clear all intervals
+        console.log('Clearing', window.pageCleanupRegistry.intervals.length, 'intervals');
+        window.pageCleanupRegistry.intervals.forEach(function(id) {
+            clearInterval(id);
+        });
+        window.pageCleanupRegistry.intervals = [];
+        
+        // Clear all timeouts
+        console.log('Clearing', window.pageCleanupRegistry.timeouts.length, 'timeouts');
+        window.pageCleanupRegistry.timeouts.forEach(function(id) {
+            clearTimeout(id);
+        });
+        window.pageCleanupRegistry.timeouts = [];
+        
+        // Abort all pending AJAX requests
+        console.log('Aborting', window.pageCleanupRegistry.ajaxRequests.length, 'AJAX requests');
+        window.pageCleanupRegistry.ajaxRequests.forEach(function(jqXHR) {
+            if (jqXHR && jqXHR.abort) {
+                try {
+                    jqXHR.abort();
+                } catch(e) {
+                    console.warn('Error aborting AJAX request:', e);
+                }
+            }
+        });
+        window.pageCleanupRegistry.ajaxRequests = [];
+        
+        // Clean up specific page cleanup functions
+        if (window.availableDatesCleanup && typeof window.availableDatesCleanup === 'function') {
+            console.log('Running availableDatesCleanup...');
+            try {
+                window.availableDatesCleanup();
+            } catch(e) {
+                console.error('Error in availableDatesCleanup:', e);
+            }
+        }
+        
+        if (window.appointmentStatusCleanup && typeof window.appointmentStatusCleanup === 'function') {
+            console.log('Running appointmentStatusCleanup...');
+            try {
+                window.appointmentStatusCleanup();
+            } catch(e) {
+                console.error('Error in appointmentStatusCleanup:', e);
+            }
+        }
+        
+        if (window.manageAppointmentsCleanup && typeof window.manageAppointmentsCleanup === 'function') {
+            console.log('Running manageAppointmentsCleanup...');
+            try {
+                window.manageAppointmentsCleanup();
+            } catch(e) {
+                console.error('Error in manageAppointmentsCleanup:', e);
+            }
+        }
+        
+        if (window.feedbackPageCleanup && typeof window.feedbackPageCleanup === 'function') {
+            console.log('Running feedbackPageCleanup...');
+            try {
+                window.feedbackPageCleanup();
+            } catch(e) {
+                console.error('Error in feedbackPageCleanup:', e);
+            }
+        }
+        
+        if (window.adminFeedbackPageCleanup && typeof window.adminFeedbackPageCleanup === 'function') {
+            console.log('Running adminFeedbackPageCleanup...');
+            try {
+                window.adminFeedbackPageCleanup();
+            } catch(e) {
+                console.error('Error in adminFeedbackPageCleanup:', e);
+            }
+        }
+        
+        // Clean up all document event handlers with namespaces
+        if (typeof jQuery !== 'undefined' && jQuery) {
+            const namespaces = ['availDates', 'appointmentStatus', 'manageAppt', 'analytics', 'feedback'];
+            namespaces.forEach(function(ns) {
+                console.log('Removing event handlers for namespace:', ns);
+                $(document).off('.' + ns);
+            });
+            
+            // Clean up any lingering modals
+            try {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+                
+                if (typeof $.fn.modal !== 'undefined') {
+                    $('.modal').modal('hide');
+                } else {
+                    $('.modal').hide();
+                    $('.modal').attr('aria-hidden', 'true');
+                }
+            } catch(e) {
+                console.warn('Error cleaning up modals:', e);
+            }
+            
+            // Remove inline styles
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
+        }
+        
+        // CRITICAL: Force remove ALL Flatpickr calendars from DOM
+        console.log('Force removing all Flatpickr calendars...');
+        document.querySelectorAll('.flatpickr-calendar').forEach(function(calendar) {
+            console.log('Removing Flatpickr calendar:', calendar);
+            calendar.remove();
+        });
+        
+        console.log('=== CLEANUP COMPLETE ===');
+    };
+
+    // Store the currently loaded page
+    let currentPage = null;
+    let isLoading = false;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.getElementById('header-toggle');
+        const nav = document.getElementById('nav-bar');
+        const overlay = document.getElementById('overlay');
+
+        // Toggle sidebar
+        if (toggle) {
             toggle.addEventListener('click', (e) => {
                 e.stopPropagation();
                 nav.classList.toggle('show');
                 overlay.classList.toggle('show');
             });
+        }
 
-            // Close sidebar if clicking outside or on overlay
+        // Close sidebar if clicking outside or on overlay
+        if (overlay) {
             overlay.addEventListener('click', () => {
                 nav.classList.remove('show');
                 overlay.classList.remove('show');
             });
+        }
 
-            // Extra safety: clicking anywhere outside
-            document.addEventListener('click', (e) => {
-                if (nav.classList.contains('show') && !nav.contains(e.target) && !toggle.contains(e.target)) {
-                    nav.classList.remove('show');
-                    overlay.classList.remove('show');
-                }
-            });
+        // Extra safety: clicking anywhere outside
+        document.addEventListener('click', (e) => {
+            if (nav && nav.classList.contains('show') && !nav.contains(e.target) && !toggle.contains(e.target)) {
+                nav.classList.remove('show');
+                overlay.classList.remove('show');
+            }
         });
+    });
 
-        function loadContent(page) {
-            $("#content-area").load(page, function(response, status, xhr) {
-                // This callback runs after content is loaded
-                if (status === "success") {
-                    // If it's the analytics page, initialize charts
-                    if (page.includes('analytics')) {
-                        // Small delay to ensure DOM is fully ready
-                        setTimeout(function() {
+    function loadContent(page) {
+        console.log('\n>>> NAVIGATION REQUEST: ' + page + ' <<<');
+        
+        // Prevent loading if already loading
+        if (isLoading) {
+            console.warn('⚠️ Already loading content, please wait...');
+            return false;
+        }
+
+        // Prevent reloading the same page
+        if (currentPage === page) {
+            console.log('ℹ️ Already on page:', page);
+            return false;
+        }
+
+        console.log('✓ Navigation approved from', currentPage || 'homepage', 'to', page);
+        isLoading = true;
+        
+        // Close sidebar on mobile after clicking
+        const nav = document.getElementById('nav-bar');
+        const overlay = document.getElementById('overlay');
+        if (nav && nav.classList.contains('show')) {
+            nav.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+        }
+        
+        // *** CRITICAL: CLEANUP EVERYTHING ***
+        console.log('🧹 Initiating comprehensive cleanup...');
+        window.cleanupAllPages();
+        
+        // Add cache buster to prevent cached content
+        const cacheBuster = '?_=' + new Date().getTime();
+        
+        // Clear content area immediately
+        const contentArea = $("#content-area");
+        contentArea.html(
+            '<div class="text-center p-5">' +
+            '<div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">' +
+            '<span class="sr-only">Loading...</span>' +
+            '</div>' +
+            '<p class="mt-3 font-weight-bold">Loading ' + page + '...</p>' +
+            '</div>'
+        );
+        
+        // Force a small delay to ensure cleanup is complete
+        setTimeout(function() {
+            console.log('📥 Loading content from:', page + cacheBuster);
+            
+            contentArea.load(page + cacheBuster, function(response, status, xhr) {
+                isLoading = false;
+                
+                if (status === "error") {
+                    console.error("❌ Error loading content:", xhr.status, xhr.statusText);
+                    currentPage = null;
+                } else if (status === "success") {
+                    console.log('✅ Content loaded successfully:', page);
+                    currentPage = page;
+                    
+                    // Scroll to top of content area smoothly
+                    $('html, body').animate({ scrollTop: 0 }, 300);
+                    
+                    // Give scripts time to initialize
+                    setTimeout(function() {
+                        console.log('⚙️ Content initialization phase complete for:', page);
+                        
+                        // Initialize page-specific functions
+                        
+                        // Personnel feedback page
+                        if (page.includes('personnel_view_feedbacks.php')) {
+                            console.log('📋 Initializing personnel feedback page...');
+                            if (typeof window.initFeedbackPage === 'function') {
+                                window.initFeedbackPage();
+                            }
+                        }
+                        
+                        // Admin feedback page
+                        if (page.includes('admin_view_feedback.php')) {
+                            console.log('📋 Initializing admin feedback page...');
+                            if (typeof window.initAdminFeedbackPage === 'function') {
+                                window.initAdminFeedbackPage();
+                            }
+                        }
+                        
+                        // Appointment status page
+                        if (page.includes('personnel_view_appointments_status.php')) {
+                            console.log('📅 Initializing appointment status page...');
+                            if (typeof window.initAppointmentStatusPage === 'function') {
+                                window.initAppointmentStatusPage();
+                            }
+                        }
+                        
+                        // Analytics page
+                        if (page.includes('analytics')) {
+                            console.log('📊 Initializing analytics page...');
                             if (typeof initializeCharts === 'function') {
                                 initializeCharts();
                             }
-                        }, 100);
-                    }
+                        }
+                        
+                        // Available dates page
+                        if (page.includes('create_available_dates.php')) {
+                            console.log('📅 Verifying calendar initialization...');
+                            
+                            setTimeout(function() {
+                                if ($('#calendar').length > 0) {
+                                    if ($('#calendar').children().length === 0) {
+                                        console.warn('⚠️ Calendar empty, attempting manual init...');
+                                        if (window.availableDatesModule && 
+                                            typeof window.availableDatesModule.generateCalendar === 'function') {
+                                            const now = new Date();
+                                            window.availableDatesModule.generateCalendar(now.getMonth(), now.getFullYear());
+                                            window.availableDatesModule.loadExistingDates();
+                                            window.availableDatesModule.checkSubmitButton();
+                                        }
+                                    } else {
+                                        console.log('✓ Calendar initialized with', $('#calendar').children().length, 'elements');
+                                    }
+                                }
+                            }, 300);
+                        }
+                    }, 200);
                 }
             });
-        }
+        }, 150); // 150ms delay to ensure cleanup completes
+        
+        return false; // Prevent default link behavior
+    }
 
-        function toggleDropdown(id) {
-            $("#" + id).slideToggle("fast");
+    function toggleDropdown(id) {
+        $("#" + id).slideToggle("fast");
+    }
+
+    function toggleProfileMenu() {
+        const menu = document.getElementById("profileMenu");
+        if (menu) {
+            menu.style.display = (menu.style.display === "none" || menu.style.display === "") ? "block" : "none";
         }
-    </script>
+    }
+
+    // Close profile menu when clicking outside
+    window.addEventListener('click', function(e) {
+        const trigger = document.querySelector('.profile-trigger');
+        const menu = document.getElementById("profileMenu");
+        if (trigger && menu && !trigger.contains(e.target) && !menu.contains(e.target)) {
+            menu.style.display = "none";
+        }
+    });
+
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', function(event) {
+        if (currentPage) {
+            console.log('⏮️ Browser navigation detected');
+            const pageToLoad = currentPage;
+            currentPage = null; // Reset to allow reload
+            loadContent(pageToLoad);
+        }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        console.log('🚪 Page unloading, running final cleanup...');
+        window.cleanupAllPages();
+    });
+
+    // Global error handler for debugging
+    window.addEventListener('error', function(e) {
+        console.error('💥 Global error:', e.message, 'at', e.filename + ':' + e.lineno);
+    });
+
+    // Expose debug function
+    window.debugLoadContent = function() {
+        console.log('=== DEBUG INFO ===');
+        console.log('Current page:', currentPage);
+        console.log('Is loading:', isLoading);
+        console.log('Intervals tracked:', window.pageCleanupRegistry.intervals.length);
+        console.log('Timeouts tracked:', window.pageCleanupRegistry.timeouts.length);
+        console.log('AJAX requests tracked:', window.pageCleanupRegistry.ajaxRequests.length);
+        console.log('==================');
+    };
+</script>
 </head>
 <body id="body-pd">
 <!-- Header -->
@@ -335,18 +663,8 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
             <a href="#" class="nav_link" onclick="loadContent('admin_manage_departments.php')">
                 <i class='bx bx-building-house'></i> <span>Manage Department</span>
             </a>
-
-            <!-- Feedback dropdown -->
-            <a href="javascript:void(0);" class="nav_link" onclick="toggleDropdown('feedbackDropdown')">
-                <i class='bx bx-message-rounded-dots'></i> 
-                <span>Select Feedback</span> <i class='bx bx-chevron-down ml-auto'></i>
-            </a>
-            <div id="feedbackDropdown" class="dropdown-submenu" style="display:none;">
-                <a href="#" class="nav_link sub_link" onclick="loadContent('admin_view_feedback.php')">Service Feedback</a>
-                <a href="#" class="nav_link sub_link" onclick="loadContent('admin_view_commendations.php')">Personnel Feedback</a>
-                <a href="#" class="nav_link sub_link" onclick="loadContent('admin_view_complaints.php')">System Feedback</a>
-            </div>
-
+            <a href="#" class="nav_link" onclick="loadContent('admin_view_feedback.php')">
+                <i class='bx bx-message-rounded-dots'></i> <span>View Feedbacks</span>
             <a href="#" class="nav_link" onclick="loadContent('admin_view_appointments.php')">
                 <i class='bx bx-calendar-event'></i> <span>View Appointments</span>
             </a>

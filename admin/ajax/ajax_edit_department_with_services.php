@@ -1,6 +1,6 @@
 <?php
 // ajax_edit_department_with_services.php
-include '../conn.php';
+include '../../conn.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $deptId = $_POST['id'] ?? '';

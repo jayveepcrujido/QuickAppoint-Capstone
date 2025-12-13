@@ -4,7 +4,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
     http_response_code(403);
     exit("Unauthorized");
 }
-include '../conn.php';
+include '../../conn.php';
 
 $name = $_POST['name'];
 $description = $_POST['description'] ?? null;

@@ -5,7 +5,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Admin') {
     exit('Unauthorized');
 }
 
-include '../conn.php';
+include '../../conn.php';
 
 $departmentId = $_GET['department_id'] ?? '';
 

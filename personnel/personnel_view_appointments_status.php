@@ -60,9 +60,9 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Appointments Status</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         body {
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
@@ -451,118 +451,79 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     box-shadow: 0 5px 15px rgba(149, 165, 166, 0.3);
     color: white;
 }
-
-/* jQuery UI Datepicker Custom Styling */
-.ui-datepicker {
+/* Flatpickr Custom Styling */
+.flatpickr-calendar {
     background: white;
     border: 2px solid #3498db;
     border-radius: 12px;
-    padding: 1rem;
     box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.ui-datepicker-header {
+.flatpickr-months {
     background: linear-gradient(135deg, #3498db, #2980b9);
-    border: none;
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    border-radius: 10px 10px 0 0;
 }
 
-.ui-datepicker-title {
+.flatpickr-current-month {
     color: white;
     font-weight: 700;
-    font-size: 1rem;
 }
 
-.ui-datepicker-prev,
-.ui-datepicker-next {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    top: 0.5rem;
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    fill: white;
 }
 
-.ui-datepicker-prev span,
-.ui-datepicker-next span {
-    background: white;
-    border-radius: 4px;
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+    fill: rgba(255, 255, 255, 0.8);
 }
 
-.ui-datepicker th {
+.flatpickr-weekday {
     color: #3498db;
     font-weight: 700;
-    font-size: 0.875rem;
-    padding: 0.5rem;
 }
 
-.ui-datepicker td {
-    padding: 0.25rem;
-}
-
-.ui-datepicker td a {
-    text-align: center;
-    padding: 0.5rem;
-    border-radius: 8px;
+.flatpickr-day {
     color: #2c3e50;
+    border-radius: 8px;
     font-weight: 600;
-    transition: all 0.3s ease;
 }
 
-.ui-datepicker td a:hover {
+.flatpickr-day:hover {
     background: #ebf5fb;
     color: #3498db;
+    border-color: #3498db;
 }
 
-.ui-datepicker td .ui-state-active {
+.flatpickr-day.selected {
     background: linear-gradient(135deg, #3498db, #2980b9);
     color: white;
+    border-color: #3498db;
 }
 
-.ui-datepicker td .ui-state-highlight {
+.flatpickr-day.today {
     background: #f39c12;
     color: white;
+    border-color: #f39c12;
 }
 
-.ui-datepicker-buttonpane {
-    border-top: 1px solid #e0e6ed;
-    padding-top: 0.75rem;
-    margin-top: 0.75rem;
+.flatpickr-day.today:hover {
+    background: #e67e22;
+    border-color: #e67e22;
 }
 
-.ui-datepicker-buttonpane button {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
+/* Date input cursor */
+.datepicker {
     cursor: pointer;
-    transition: all 0.3s ease;
+    background-color: white;
 }
 
-.ui-datepicker-buttonpane button:hover {
-    background: #2980b9;
-    transform: translateY(-2px);
+.datepicker:focus {
+    cursor: pointer;
 }
 
-/* Responsive adjustments for filters */
-@media (max-width: 991px) {
-    .filter-section {
-        padding: 1rem;
-    }
-    
-    .filter-label {
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-    #statusFilter,
-    .datepicker {
-        font-size: 0.9rem;
-    }
-}
     </style>
 </head>
 <body>
@@ -612,10 +573,10 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </select>
         </div>
         <div class="col-md-3">
-            <button type="button" class="btn btn-primary btn-block mb-2" onclick="applyFilters()">
+            <button type="button" class="btn btn-primary btn-block mb-2" onclick="applyAppointmentFilters()">
                 <i class="fas fa-search"></i> Apply
             </button>
-            <button type="button" class="btn btn-secondary btn-block" onclick="clearFilters()">
+            <button type="button" class="btn btn-secondary btn-block" onclick="clearAppointmentFilters()">
                 <i class="fas fa-redo"></i> Clear
             </button>
         </div>
@@ -755,132 +716,321 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <script>
-(function() {
-  'use strict';
-  
-  // Create unique namespace for this page
-  const NAMESPACE = 'appointmentStatus_' + Date.now();
-  console.log('Initializing appointment status page with namespace:', NAMESPACE);
-  
-  // Clean up previous instance if exists
-  if (window.appointmentStatusCleanup) {
-    console.log('Cleaning up previous appointment status instance...');
-    try {
-      window.appointmentStatusCleanup();
-    } catch (e) {
-      console.error('Error during cleanup:', e);
-    }
-  }
-  
-  let isInitialized = false;
-  
-  // Initialize the page
-  function initializePage() {
-    if (isInitialized) {
-      console.log('Page already initialized, skipping...');
-        // Initialize Datepicker
-        $('.datepicker').datepicker({
-            dateFormat: 'yy-mm-dd',
-            changeMonth: true,
-            changeYear: true,
-            showButtonPanel: true,
-            yearRange: '-10:+10',
-            onClose: function(selectedDate) {
-                // If start_date is selected, set minDate for end_date
-                if ($(this).attr('id') === 'start_date') {
-                    $('#end_date').datepicker('option', 'minDate', selectedDate);
-                }
-                // If end_date is selected, set maxDate for start_date
-                if ($(this).attr('id') === 'end_date') {
-                    $('#start_date').datepicker('option', 'maxDate', selectedDate);
-                }
+// Appointment status page specific filter functions
+function applyAppointmentFilters() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    
+    console.log('🔍 Apply appointment filters clicked - Start:', startDate, 'End:', endDate);
+    
+    let url = 'personnel_view_appointments_status.php';
+    const params = [];
+    if (startDate) params.push('start_date=' + encodeURIComponent(startDate));
+    if (endDate) params.push('end_date=' + encodeURIComponent(endDate));
+    if (params.length > 0) url += '?' + params.join('&');
+    
+    console.log('📍 Loading URL:', url);
+    
+    if (typeof loadContent === 'function') {
+        loadContent(url);
+    } else {
+        $('#content-area').load(url, function() {
+            if (typeof window.initAppointmentStatusPage === 'function') {
+                window.initAppointmentStatusPage();
             }
         });
-        
-        // Set initial min/max dates if values exist
-        var startVal = $('#start_date').val();
-        var endVal = $('#end_date').val();
-        if (startVal) {
-            $('#end_date').datepicker('option', 'minDate', startVal);
-        }
-        if (endVal) {
-            $('#start_date').datepicker('option', 'maxDate', endVal);
-        }
-      return;
     }
-    
-    console.log('Setting up appointment status event handlers...');
-    
-    // Status filter with namespaced event
-    $("#statusFilter").off('change.' + NAMESPACE).on('change.' + NAMESPACE, function() {
-      const selectedStatus = $(this).val();
-      console.log('Filtering by status:', selectedStatus || 'All');
+}
 
-      // Filter desktop table rows
-      $("#appointmentsTable tbody tr").each(function() {
-        const rowStatus = $(this).data("status");
-
-        if (!selectedStatus || rowStatus === selectedStatus) {
-          $(this).show();
-        } else {
-          $(this).hide();
-        }
-      });
-
-      // Filter mobile cards
-      $(".appointment-mobile-card").each(function() {
-        const cardStatus = $(this).data("status");
-
-        if (!selectedStatus || cardStatus === selectedStatus) {
-          $(this).show();
-        } else {
-          $(this).hide();
-        }
-      });
-    });
+function clearAppointmentFilters() {
+    console.log('🧹 Clear appointment filters clicked');
     
-    isInitialized = true;
-    console.log('Appointment status page initialized successfully');
-  }
-  
-  // CRITICAL: Cleanup function
-  window.appointmentStatusCleanup = function() {
-    console.log('=== Cleaning up appointment status page ===');
-    console.log('Namespace:', NAMESPACE);
+    document.getElementById('start_date').value = '';
+    document.getElementById('end_date').value = '';
     
-    // Remove all event handlers with this namespace
-    $("#statusFilter").off('.' + NAMESPACE);
-    $(document).off('.' + NAMESPACE);
-        
-    // Destroy datepickers
-    if ($('.datepicker').length) {
-        $('.datepicker').datepicker('destroy');
+    if (typeof loadContent === 'function') {
+        loadContent('personnel_view_appointments_status.php');
+    } else {
+        $('#content-area').load('personnel_view_appointments_status.php', function() {
+            if (typeof window.initAppointmentStatusPage === 'function') {
+                window.initAppointmentStatusPage();
+            }
+        });
     }
+}
+
+(function() {
+    'use strict';
     
-    // Reset initialization flag
-    isInitialized = false;
+    console.log('=== Appointment Status Page Loading ===');
     
-    console.log('Appointment status cleanup complete');
-  };
-  
-  // Initialize when document is ready
-  if (document.readyState === 'loading') {
-    $(document).ready(function() {
-      console.log('Document ready, initializing appointment status page...');
-      initializePage();
-    });
-  } else {
-    console.log('Document already ready, initializing immediately...');
-    initializePage();
-  }
-  
-  // Backup cleanup on beforeunload
-  window.addEventListener('beforeunload', function() {
+    // Clean up previous instance if exists
     if (window.appointmentStatusCleanup) {
-      window.appointmentStatusCleanup();
+        console.log('Cleaning up previous instance...');
+        try {
+            window.appointmentStatusCleanup();
+        } catch (e) {
+            console.error('Error during cleanup:', e);
+        }
     }
-  });
-  
+    
+    // Store Flatpickr instances
+    let startDatePicker = null;
+    let endDatePicker = null;
+    let statusFilterHandler = null;
+    
+    // Initialize function
+    function initializePage() {
+        console.log('Initializing appointment status page...');
+        
+        // Wait a bit for DOM to be fully ready
+        setTimeout(function() {
+            
+            // Check if Flatpickr is available
+            if (typeof flatpickr === 'undefined') {
+                console.error('❌ Flatpickr not loaded!');
+                
+                // Try to load it dynamically
+                if (!document.querySelector('script[src*="flatpickr"]')) {
+                    console.log('Attempting to load Flatpickr...');
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/flatpickr';
+                    script.onload = function() {
+                        console.log('✓ Flatpickr loaded dynamically, retrying initialization...');
+                        setTimeout(initializeDatePickers, 100);
+                    };
+                    document.head.appendChild(script);
+                }
+                return;
+            }
+            
+            initializeDatePickers();
+            initializeStatusFilter();
+            
+        }, 200); // Give time for content to settle
+    }
+    
+    // Initialize date pickers
+    function initializeDatePickers() {
+        console.log('Initializing date pickers...');
+        
+        // Get input elements
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        
+        if (!startDateInput || !endDateInput) {
+            console.error('❌ Date input elements not found!');
+            return;
+        }
+        
+        console.log('✓ Date inputs found:', startDateInput.id, endDateInput.id);
+        
+        // Destroy existing instances if they exist
+        if (startDatePicker) {
+            try {
+                startDatePicker.destroy();
+                console.log('Destroyed old start date picker');
+            } catch(e) {
+                console.warn('Error destroying start picker:', e);
+            }
+        }
+        
+        if (endDatePicker) {
+            try {
+                endDatePicker.destroy();
+                console.log('Destroyed old end date picker');
+            } catch(e) {
+                console.warn('Error destroying end picker:', e);
+            }
+        }
+        
+        // Initialize Start Date Picker
+        try {
+            startDatePicker = flatpickr(startDateInput, {
+                dateFormat: 'Y-m-d',
+                maxDate: 'today',
+                allowInput: false,
+                clickOpens: true,
+                onChange: function(selectedDates, dateStr) {
+                    console.log('Start date selected:', dateStr);
+                    if (endDatePicker && dateStr) {
+                        endDatePicker.set('minDate', dateStr);
+                    }
+                },
+                onOpen: function() {
+                    console.log('Start date picker opened');
+                },
+                onClose: function() {
+                    console.log('Start date picker closed');
+                }
+            });
+            console.log('✓ Start date picker initialized');
+        } catch(e) {
+            console.error('❌ Error initializing start date picker:', e);
+        }
+        
+        // Initialize End Date Picker
+        try {
+            endDatePicker = flatpickr(endDateInput, {
+                dateFormat: 'Y-m-d',
+                maxDate: 'today',
+                allowInput: false,
+                clickOpens: true,
+                onChange: function(selectedDates, dateStr) {
+                    console.log('End date selected:', dateStr);
+                    if (startDatePicker && dateStr) {
+                        startDatePicker.set('maxDate', dateStr);
+                    }
+                },
+                onOpen: function() {
+                    console.log('End date picker opened');
+                },
+                onClose: function() {
+                    console.log('End date picker closed');
+                }
+            });
+            console.log('✓ End date picker initialized');
+        } catch(e) {
+            console.error('❌ Error initializing end date picker:', e);
+        }
+        
+        // Set initial constraints if values exist
+        const startVal = startDateInput.value;
+        const endVal = endDateInput.value;
+        
+        if (startVal && endDatePicker) {
+            endDatePicker.set('minDate', startVal);
+            console.log('Set minDate for end_date:', startVal);
+        }
+        if (endVal && startDatePicker) {
+            startDatePicker.set('maxDate', endVal);
+            console.log('Set maxDate for start_date:', endVal);
+        }
+        
+        console.log('=== Date pickers ready! ===');
+        
+        // Test click handlers
+        startDateInput.addEventListener('click', function() {
+            console.log('Start input clicked');
+        });
+        endDateInput.addEventListener('click', function() {
+            console.log('End input clicked');
+        });
+    }
+    
+    // Initialize status filter
+    function initializeStatusFilter() {
+        console.log('Initializing status filter...');
+        
+        const statusFilter = document.getElementById('statusFilter');
+        if (!statusFilter) {
+            console.error('❌ Status filter not found!');
+            return;
+        }
+        
+        // Remove old handler if exists
+        if (statusFilterHandler) {
+            statusFilter.removeEventListener('change', statusFilterHandler);
+        }
+        
+        // Create new handler
+        statusFilterHandler = function() {
+            const selectedStatus = this.value;
+            console.log('Filtering by status:', selectedStatus || 'All');
+
+            // Filter desktop table rows
+            const tableRows = document.querySelectorAll("#appointmentsTable tbody tr");
+            tableRows.forEach(function(row) {
+                const rowStatus = row.getAttribute('data-status');
+                if (!selectedStatus || rowStatus === selectedStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Filter mobile cards
+            const mobileCards = document.querySelectorAll(".appointment-mobile-card");
+            mobileCards.forEach(function(card) {
+                const cardStatus = card.getAttribute('data-status');
+                if (!selectedStatus || cardStatus === selectedStatus) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+        
+        // Attach new handler
+        statusFilter.addEventListener('change', statusFilterHandler);
+        console.log('✓ Status filter initialized');
+    }
+    
+    // Cleanup function
+    window.appointmentStatusCleanup = function() {
+        console.log('=== Cleaning up appointment status page ===');
+        
+        // Destroy Flatpickr instances
+        if (startDatePicker) {
+            try {
+                startDatePicker.destroy();
+                startDatePicker = null;
+                console.log('✓ Start date picker destroyed');
+            } catch(e) {
+                console.warn('Error destroying start picker:', e);
+            }
+        }
+        
+        if (endDatePicker) {
+            try {
+                endDatePicker.destroy();
+                endDatePicker = null;
+                console.log('✓ End date picker destroyed');
+            } catch(e) {
+                console.warn('Error destroying end picker:', e);
+            }
+        }
+        
+        // Remove status filter handler
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter && statusFilterHandler) {
+            statusFilter.removeEventListener('change', statusFilterHandler);
+            statusFilterHandler = null;
+            console.log('✓ Status filter handler removed');
+        }
+        
+        console.log('✓ Cleanup complete');
+    };
+    
+    // Initialize immediately if DOM is ready, otherwise wait
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePage);
+        console.log('Waiting for DOMContentLoaded...');
+    } else {
+        console.log('DOM already ready, initializing immediately...');
+        initializePage();
+    }
+    
+    // Also initialize on jQuery ready (for compatibility)
+    if (typeof jQuery !== 'undefined') {
+        $(document).ready(function() {
+            console.log('jQuery ready fired');
+            // Only initialize if not already done
+            if (!startDatePicker && !endDatePicker) {
+                initializePage();
+            }
+        });
+    }
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (window.appointmentStatusCleanup) {
+            window.appointmentStatusCleanup();
+        }
+    });
+    
+    console.log('=== Appointment Status Script Loaded ===');
+    
 })();
 </script>
 </body>
