@@ -30,15 +30,15 @@ try {
     foreach ($serviceNames as $index => $serviceName) {
         $serviceId = $serviceIds[$index];
 
-        if ($serviceId === 'new') {
-            // New service
+        if (strpos($serviceId, 'new') === 0) {
+            // New service - insert it first
             $stmt = $pdo->prepare("INSERT INTO department_services (department_id, service_name) VALUES (?, ?)");
             $stmt->execute([$deptId, trim($serviceName)]);
             $newServiceId = $pdo->lastInsertId();
 
-            // Add new requirements
-            if (!empty($requirementsMap["new_{$index}"])) {
-                foreach ($requirementsMap["new_{$index}"] as $req) {
+            // Add requirements using the original temp ID from the form
+            if (!empty($requirementsMap[$serviceId])) {
+                foreach ($requirementsMap[$serviceId] as $req) {
                     if (trim($req) !== '') {
                         $stmt = $pdo->prepare("INSERT INTO service_requirements (service_id, requirement) VALUES (?, ?)");
                         $stmt->execute([$newServiceId, trim($req)]);
@@ -67,7 +67,7 @@ try {
     }
 
     $pdo->commit();
-    echo json_encode(['status' => 'success']);
+    echo json_encode(['status' => 'success', 'message' => 'Department updated successfully!']);
     exit;
 
 } catch (Exception $e) {

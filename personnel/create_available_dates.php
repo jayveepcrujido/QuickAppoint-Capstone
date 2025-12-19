@@ -111,7 +111,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 }
 
 .page-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); 
+    background: linear-gradient(135deg, #0D92F4, #27548A);
     border-radius: 15px;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -373,7 +373,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
 .modal-header {
     border-radius: 15px 15px 0 0;
-    background: linear-gradient(135deg, #0D92F4 0%, #27548A 100%);
+    background: linear-gradient(135deg, #0D92F4, #27548A);
     color: white;
     border: none;
 }

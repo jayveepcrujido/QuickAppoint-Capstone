@@ -53,7 +53,7 @@ $residents = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .page-header {
-            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             border-radius: 15px;
             padding: 2rem;
             color: white;
@@ -131,7 +131,7 @@ $residents = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .card-header-custom {
-            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             color: white;
             padding: 1.5rem;
             border: none;

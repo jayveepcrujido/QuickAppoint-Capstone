@@ -111,7 +111,7 @@ $totalsMonthly = array_column($monthlyTrends, 'total');
         }
 
         .page-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3d6bb3 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             padding: 25px 30px;
             margin: 20px;
             border-radius: 20px;

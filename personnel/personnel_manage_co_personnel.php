@@ -508,71 +508,84 @@ $department_name = $dept_name_query->fetchColumn();
         </div>
     </div>
 
-    <script>
-        // Add Co-Personnel
-        $('#addCoPersonnelForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            
-            // Validate password match
-            if (formData.get('password') !== formData.get('confirm_password')) {
-                showAlert('Passwords do not match!', 'danger');
-                return;
+<script>
+// Add Co-Personnel
+$('#addCoPersonnelForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalBtnText = submitBtn.html();
+    
+    // Validate password match
+    if (formData.get('password') !== formData.get('confirm_password')) {
+        showAlert('Passwords do not match!', 'danger');
+        return;
+    }
+    
+    // Disable button and show loading
+    submitBtn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Creating...');
+    
+    $.ajax({
+        url: 'ajax/add_co_personnel.php',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                showAlert(response.message, 'success');
+                $('#addCoPersonnelModal').modal('hide');
+                $('#addCoPersonnelForm')[0].reset();
+                
+                // Dynamically refresh the page content
+                refreshCoPersonnelList();
+            } else {
+                showAlert(response.message, 'danger');
+                submitBtn.prop('disabled', false).html(originalBtnText);
             }
-            
-            $.ajax({
-                url: 'ajax/add_co_personnel.php',
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        showAlert(response.message, 'success');
-                        $('#addCoPersonnelModal').modal('hide');
-                        $('#addCoPersonnelForm')[0].reset();
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        showAlert(response.message, 'danger');
-                    }
-                },
-                error: function() {
-                    showAlert('An error occurred. Please try again.', 'danger');
-                }
-            });
-        });
-
-        // Edit Personnel
-        function editPersonnel(id) {
-            $.ajax({
-                url: 'ajax/get_co_personnel.php',
-                method: 'GET',
-                data: { id: id },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        $('#edit_personnel_id').val(response.data.id);
-                        $('#edit_first_name').val(response.data.first_name);
-                        $('#edit_middle_name').val(response.data.middle_name);
-                        $('#edit_last_name').val(response.data.last_name);
-                        $('#edit_email').val(response.data.email);
-                        $('#editCoPersonnelModal').modal('show');
-                    } else {
-                        showAlert('Failed to load personnel data', 'danger');
-                    }
-                },
-                error: function() {
-                    showAlert('An error occurred', 'danger');
-                }
-            });
+        },
+        error: function(xhr) {
+            console.error('Error:', xhr.responseText);
+            showAlert('An error occurred. Please try again.', 'danger');
+            submitBtn.prop('disabled', false).html(originalBtnText);
         }
+    });
+});
+
+// Edit Personnel
+function editPersonnel(id) {
+    $.ajax({
+        url: 'ajax/get_co_personnel.php',
+        method: 'GET',
+        data: { id: id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                $('#edit_personnel_id').val(response.data.id);
+                $('#edit_first_name').val(response.data.first_name);
+                $('#edit_middle_name').val(response.data.middle_name);
+                $('#edit_last_name').val(response.data.last_name);
+                $('#edit_email').val(response.data.email);
+                $('#editCoPersonnelModal').modal('show');
+            } else {
+                showAlert('Failed to load personnel data', 'danger');
+            }
+        },
+        error: function() {
+            showAlert('An error occurred', 'danger');
+        }
+    });
+}
+
 // Update Personnel
 $('#editCoPersonnelForm').on('submit', function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalBtnText = submitBtn.html();
     
     // Validate password match if passwords provided
     const password = formData.get('password');
@@ -585,6 +598,9 @@ $('#editCoPersonnelForm').on('submit', function(e) {
         }
     }
     
+    // Disable button and show loading
+    submitBtn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Updating...');
+    
     $.ajax({
         url: 'ajax/update_co_personnel.php',
         method: 'POST',
@@ -593,70 +609,309 @@ $('#editCoPersonnelForm').on('submit', function(e) {
         contentType: false,
         dataType: 'json',
         success: function(response) {
-            console.log('Response:', response); // DEBUG LINE
+            console.log('Response:', response);
             if (response.success) {
                 showAlert(response.message, 'success');
                 $('#editCoPersonnelModal').modal('hide');
-                setTimeout(() => location.reload(), 1500);
+                
+                // Dynamically refresh the page content
+                refreshCoPersonnelList();
             } else {
                 showAlert(response.message, 'danger');
+                submitBtn.prop('disabled', false).html(originalBtnText);
             }
         },
         error: function(xhr, status, error) {
-            console.error('AJAX Error:', xhr.responseText); // DEBUG LINE
+            console.error('AJAX Error:', xhr.responseText);
             showAlert('An error occurred: ' + error, 'danger');
+            submitBtn.prop('disabled', false).html(originalBtnText);
         }
     });
 });
 
-        // Confirm Delete
-        function confirmDelete(id, name) {
-            $('#deletePersonnelId').val(id);
-            $('#deletePersonnelName').text(name);
-            $('#deleteConfirmModal').modal('show');
-        }
+// Confirm Delete
+function confirmDelete(id, name) {
+    $('#deletePersonnelId').val(id);
+    $('#deletePersonnelName').text(name);
+    $('#deleteConfirmModal').modal('show');
+}
 
-        // Delete Personnel
-        function deletePersonnel() {
-            const id = $('#deletePersonnelId').val();
+// Delete Personnel
+function deletePersonnel() {
+    const id = $('#deletePersonnelId').val();
+    const deleteBtn = $('#deleteConfirmModal').find('.btn-danger');
+    const originalBtnText = deleteBtn.html();
+    
+    // Disable button and show loading
+    deleteBtn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Deleting...');
+    
+    $.ajax({
+        url: 'ajax/delete_co_personnel.php',
+        method: 'POST',
+        data: { id: id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                showAlert(response.message, 'success');
+                $('#deleteConfirmModal').modal('hide');
+                
+                // Dynamically refresh the page content
+                refreshCoPersonnelList();
+            } else {
+                showAlert(response.message, 'danger');
+                deleteBtn.prop('disabled', false).html(originalBtnText);
+            }
+        },
+        error: function(xhr) {
+            console.error('Error:', xhr.responseText);
+            showAlert('An error occurred. Please try again.', 'danger');
+            deleteBtn.prop('disabled', false).html(originalBtnText);
+        }
+    });
+}
+
+// Dynamic Refresh Function - Simplified and more robust
+function refreshCoPersonnelList() {
+    console.log('Starting refresh...'); // DEBUG
+    
+    // Remove existing content first
+    $('.personnel-card, .empty-state').remove();
+    
+    // Show loading indicator
+    const loadingHtml = `
+        <div class="text-center py-5" id="loadingIndicator" style="background: white; border-radius: 12px; margin-top: 1rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+            <i class='bx bx-loader-alt bx-spin' style='font-size: 3rem; color: #0D92F4;'></i>
+            <p class="mt-3" style="color: #64748b;">Refreshing data...</p>
+        </div>
+    `;
+    $('.action-bar').after(loadingHtml);
+    
+    // Fetch fresh data
+    $.ajax({
+        url: 'ajax/get_co_personnel_list.php',
+        method: 'GET',
+        dataType: 'json',
+        cache: false,
+        timeout: 10000,
+        success: function(response) {
+            console.log('AJAX Success:', response); // DEBUG
             
-            $.ajax({
-                url: 'ajax/delete_co_personnel.php',
-                method: 'POST',
-                data: { id: id },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        showAlert(response.message, 'success');
-                        $('#deleteConfirmModal').modal('hide');
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        showAlert(response.message, 'danger');
-                    }
-                },
-                error: function() {
-                    showAlert('An error occurred. Please try again.', 'danger');
+            // Remove loading
+            $('#loadingIndicator').remove();
+            
+            if (response.success) {
+                // Update count
+                $('.action-bar small').text('Total: ' + response.count + ' personnel');
+                
+                // Build and insert personnel cards
+                if (response.data && response.data.length > 0) {
+                    response.data.forEach(function(person) {
+                        const middleInitial = person.middle_name ? person.middle_name.charAt(0) + '. ' : '';
+                        const fullName = person.first_name + ' ' + middleInitial + person.last_name;
+                        const createdDate = new Date(person.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+                        
+                        // Creator info
+                        let creatorHtml = '';
+                        if (person.created_by_personnel_id && person.creator_first_name) {
+                            creatorHtml = `
+                                <div class="meta-item">
+                                    <i class='bx bx-user'></i>
+                                    Created by: ${person.creator_first_name} ${person.creator_last_name}
+                                </div>
+                            `;
+                        }
+                        
+                        const cardHtml = `
+                            <div class="personnel-card">
+                                <div class="personnel-info">
+                                    <div class="personnel-details">
+                                        <h5>${fullName}</h5>
+                                        <div class="personnel-meta">
+                                            <div class="meta-item">
+                                                <i class='bx bx-envelope'></i>
+                                                ${person.email}
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class='bx bx-calendar'></i>
+                                                Added: ${createdDate}
+                                            </div>
+                                            ${creatorHtml}
+                                        </div>
+                                    </div>
+                                    <div class="personnel-actions">
+                                        <button class="btn-action btn-edit" onclick="editPersonnel(${person.id})">
+                                            <i class='bx bx-edit'></i> Edit
+                                        </button>
+                                        <button class="btn-action btn-delete" onclick="confirmDelete(${person.id}, '${fullName.replace(/'/g, "\\'")}')">
+                                            <i class='bx bx-trash'></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        $('.action-bar').after(cardHtml);
+                    });
+                    
+                } else {
+                    // Show empty state
+                    const emptyStateHtml = `
+                        <div class="empty-state">
+                            <i class='bx bx-user-x'></i>
+                            <h4>No Co-Personnel Yet</h4>
+                            <p>Click "Add Co-Personnel" to create your first team member</p>
+                        </div>
+                    `;
+                    $('.action-bar').after(emptyStateHtml);
                 }
+                
+                // Clean up modals
+                cleanupModals();
+                
+            } else {
+                showAlert(response.message || 'Failed to load personnel', 'danger');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error Details:', {
+                status: status,
+                error: error,
+                statusCode: xhr.status,
+                responseText: xhr.responseText
             });
-        }
-
-        // Show Alert
-        function showAlert(message, type) {
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    <i class='bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'}'></i>
-                    ${message}
-                    <button type="button" class="close" data-dismiss="alert">
-                        <span>&times;</span>
+            
+            // Remove loading
+            $('#loadingIndicator').remove();
+            
+            // Show error message
+            const errorHtml = `
+                <div class="empty-state">
+                    <i class='bx bx-error-circle' style="color: #ef4444;"></i>
+                    <h4>Failed to Load Data</h4>
+                    <p>Error: ${error || 'Unknown error'}</p>
+                    <button class="btn btn-primary mt-3" onclick="refreshCoPersonnelList()">
+                        <i class='bx bx-refresh'></i> Try Again
                     </button>
                 </div>
             `;
-            $('#alertMessage').html(alertHtml);
+            $('.action-bar').after(errorHtml);
             
-            setTimeout(() => {
-                $('.alert').fadeOut();
-            }, 5000);
+            showAlert('Unable to refresh data. Check console for details.', 'danger');
         }
-    </script>
+    });
+}
+
+// Clean up modal backdrops
+function cleanupModals() {
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open');
+    $('body').css('padding-right', '');
+    $('body').css('overflow', '');
+}
+
+// Ensure modals are cleaned up on hide
+$('.modal').on('hidden.bs.modal', function() {
+    cleanupModals();
+});
+
+// Show Alert - Top Right Toast Notification
+function showAlert(message, type) {
+    // Remove any existing alerts
+    $('.toast-notification').remove();
+    
+    const bgColor = type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : 
+                   type === 'danger' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 
+                   type === 'warning' ? 'linear-gradient(135deg, #f59e0b, #d97706)' :
+                   'linear-gradient(135deg, #0D92F4, #27548A)';
+    
+    const icon = type === 'success' ? 'bx-check-circle' : 
+                type === 'danger' ? 'bx-error-circle' : 
+                type === 'warning' ? 'bx-error' :
+                'bx-info-circle';
+    
+    const alertHtml = `
+        <div class="toast-notification" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${bgColor};
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            max-width: 400px;
+            min-width: 300px;
+            animation: slideInRight 0.4s ease-out;
+        ">
+            <i class='bx ${icon}' style='font-size: 1.5rem; flex-shrink: 0;'></i>
+            <span style='font-weight: 500; flex: 1;'>${message}</span>
+            <button type="button" class="toast-close" style="
+                background: transparent;
+                border: none;
+                color: white;
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 0;
+                line-height: 1;
+                opacity: 0.8;
+                transition: opacity 0.2s;
+                margin-left: 0.5rem;
+            " onclick="$(this).parent().fadeOut(200, function(){ $(this).remove(); })">
+                &times;
+            </button>
+        </div>
+    `;
+    
+    $('body').append(alertHtml);
+    
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+        $('.toast-notification').fadeOut(400, function() {
+            $(this).remove();
+        });
+    }, 4000);
+}
+
+// Add animation keyframes if not exists
+if (!$('#toastAnimationStyles').length) {
+    $('head').append(`
+        <style id="toastAnimationStyles">
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            .toast-close:hover {
+                opacity: 1 !important;
+                transform: scale(1.1);
+            }
+            
+            @media (max-width: 576px) {
+                .toast-notification {
+                    top: 10px !important;
+                    right: 10px !important;
+                    left: 10px !important;
+                    max-width: none !important;
+                    min-width: auto !important;
+                }
+            }
+        </style>
+    `);
+}
+</script>
 </body>
 </html>

@@ -49,7 +49,7 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .page-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             border-radius: 20px;
             padding: 2rem 2.5rem;
             margin-bottom: 2rem;

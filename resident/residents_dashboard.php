@@ -716,14 +716,14 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
         <h4 style="text-align: center; color: white;">Residents Menu</h4>
         <nav class="nav">
             <a href="javascript:void(0);" class="nav_link" onclick="toggleDropdown('appointmentDropdown')">
-                <i class='bx bx-calendar'></i> <span>Appointments</span> <i class='bx bx-chevron-down ml-auto'></i>
+                <i class='bx bx-calendar'></i> <span>My Appointments</span> <i class='bx bx-chevron-down ml-auto'></i>
             </a>
             <div id="appointmentDropdown" class="dropdown-submenu" style="display:none;">
                 <a href="#" class="nav_link sub_link" onclick="loadContent('residents_pending_appointments.php')">Pending Appointments</a>
                 <a href="#" class="nav_link sub_link" onclick="loadContent('residents_completed_appointments.php')">Completed Appointments</a>
             </div>
             <a href="#" class="nav_link" onclick="loadContent('residents_view_departments.php')">
-                <i class='bx bx-user'></i> <span>View Departments</span>
+                <i class='bx bx-user'></i> <span>Book an Appointment</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('residents_completed_appointments.php')">
                 <i class='bx bx-message-square'></i> <span>Submit Feedback</span>

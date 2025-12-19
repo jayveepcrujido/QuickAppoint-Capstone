@@ -38,7 +38,7 @@ $dept_heads_count = count(array_filter($personnel, fn($p) => $p['is_department_h
     <link rel="stylesheet" href="../assets/css/admin.css">
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            --primary-gradient: linear-gradient(135deg, #0D92F4, #27548A);
             --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             --danger-gradient: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
             --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
@@ -54,11 +54,10 @@ $dept_heads_count = count(array_filter($personnel, fn($p) => $p['is_department_h
         .page-header {
             background: var(--primary-gradient);
             color: white;
-            padding: 2rem 0;
+            padding: 2rem;
             margin-bottom: 2rem;
-            border-radius: 20px 20px 20px 20px;
+            border-radius: 20px;
             box-shadow: var(--card-shadow);
-            margin-top: -1rem;
         }
 
         .page-header h4 {
@@ -496,9 +495,9 @@ $dept_heads_count = count(array_filter($personnel, fn($p) => $p['is_department_h
     </style>
 </head>
 <body>
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="container">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
             <h4><i class='bx bx-user-circle'></i> Manage LGU Personnel</h4>
         </div>
     </div>
@@ -838,19 +837,21 @@ $("#addForm").submit(function(e) {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    // Close modal properly and remove backdrop
-                    $('#addModal').modal('hide');
+                    // Reset form first
                     $('#addForm')[0].reset();
                     
-                    // Remove modal backdrop and reset body
+                    // Close modal
+                    $('#addModal').modal('hide');
+
                     $('.modal-backdrop').remove();
                     $('body').removeClass('modal-open');
                     $('body').css('padding-right', '');
                     
-                    alert(response.message);
-                    
-                    // Now reload the table
-                    loadPersonnelTable();
+                    // Wait for modal to fully close before showing alert
+                    $('#addModal').one('hidden.bs.modal', function() {
+                        alert(response.message);
+                        loadPersonnelTable();
+                    });
                 } else {
                     alert('Error: ' + response.message);
                 }

@@ -14,14 +14,14 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
     <title>Admin Dashboard</title> 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href='https://cdn.boxicons.com/3.0.6/fonts/basic/boxicons.min.css' rel='stylesheet'>
     
     <link rel="stylesheet" href="../assets/css/admin.css">
     
     <style>
         /* Enhanced Dashboard Styles */
         .welcome-banner {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             border-radius: 15px;
             padding: 2rem;
             color: white;
@@ -651,14 +651,16 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
 
     <!-- Sidebar -->
     <div class="l-navbar" id="nav-bar">
-        <img src="../assets/images/Unisan_logo.png" id="sidebar-logo" alt="Sidebar Logo" class="header_img">
+        <a href="admin_dashboard.php" style="display: block; cursor: pointer;">
+            <img src="../assets/images/Unisan_logo.png" id="sidebar-logo" alt="Sidebar Logo" class="header_img" style="cursor: pointer;">
+        </a>
         <h4 style="text-align: center; color: white;">Admin Menu</h4>
         <nav class="nav">
             <a href="#" class="nav_link" onclick="loadContent('admin_analytics.php')">
                 <i class='bx bx-home-alt'></i> <span>Dashboard</span>
             </a>
-            <a href="#" class="nav_link" onclick="loadContent('GeoMap.php')">
-                <i class='bx bx-home-alt'></i> <span>Appointments GeoMap</span>
+            <a href="#" class="nav_link" onclick="loadContent('admin_GeoMap.php')">
+                <i class='bx bx-location-pin'></i> <span>Appointments GeoMap</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_create_lgu_personnel.php')">
                 <i class='bx bx-user-plus'></i> <span>Manage LGU Personnel</span>
@@ -667,16 +669,16 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
                 <i class='bx bx-building-house'></i> <span>Manage Department</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_view_appointments.php')">
-                <i class='bx bx-calendar-event'></i> <span>View Appointments</span>
+                <i class='bx bx-calendar-event'></i> <span>All Appointments</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_manage_residents_accounts.php')">
                 <i class='bx bx-group'></i> <span>Manage Residents Accounts</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_view_feedback.php')">
-                <i class='bx bx-message-rounded-dots'></i> <span>View Feedbacks</span>
+                <i class='bx bx-message'></i> <span>View Feedbacks</span>
             </a>
             <a href="#" class="nav_link" data-toggle="modal" data-target="#logoutModal">
-                <i class='bx bx-log-out'></i> <span>Logout</span>
+                <i class='bx bx-arrow-out-right-circle-half'></i> <span>Logout</span>
             </a>
         </nav>
     </div>

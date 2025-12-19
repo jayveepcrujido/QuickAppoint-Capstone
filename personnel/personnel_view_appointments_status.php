@@ -77,7 +77,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .page-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             border-radius: 15px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
@@ -152,7 +152,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         #appointmentsTable thead th {
-            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             color: white;
             font-weight: 600;
             text-transform: uppercase;

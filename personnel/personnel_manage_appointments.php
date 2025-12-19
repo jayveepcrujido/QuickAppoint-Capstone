@@ -20,9 +20,9 @@ if (!$department_id) {
 // Get pending appointments with resident + service info
 $query = "
     SELECT 
-        a.id, a.transaction_id, a.status, a.reason, a.scheduled_for, a.requested_at,
+        a.id, a.transaction_id, a.status, a.reason, a.scheduled_for, a.requested_at, a.available_date_id,
         r.first_name, r.middle_name, r.last_name, r.address, r.birthday, r.age, r.sex, r.civil_status,
-        r.valid_id_image, r.selfie_image,
+        r.id_front_image, r.id_back_image, r.selfie_with_id_image,
         au.email,
         ds.service_name
     FROM appointments a
@@ -66,7 +66,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
 
         .page-header {
             margin-top: -2rem;
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); 
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             border-radius: 15px;
             padding: 2rem;
             margin-bottom: 2rem;
@@ -177,7 +177,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .appointment-card .card-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             color: white;
             padding: 1rem 1.25rem;
             border: none;
@@ -229,7 +229,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #0D92F4, #27548A);
             color: white;
             padding: 1.5rem;
             border: none;
@@ -273,7 +273,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .img-thumbnail:hover {
-            border-color: #3498db; #2c3e50 0%, #3498db
+            border-color: #2c3e50 0%, #3498db;
             transform: scale(1.02);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
         }
@@ -563,6 +563,221 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         font-size: 0.75rem;
     }
 }
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+    color: white;
+}
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-toast {
+    border-radius: 10px;
+    border: none;
+}
+
+.table-success {
+    background-color: #d4edda !important;
+    transition: background-color 0.5s ease;
+}
+/* Calendar Styles */
+.calendar-container {
+    background: white;
+    border: 2px solid #e0e6ed;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e0e6ed;
+}
+
+.calendar-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.calendar-nav button {
+    background: #f7fafc;
+    border: 1px solid #e0e6ed;
+    border-radius: 6px;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.calendar-nav button:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    border: 2px solid transparent;
+}
+
+.calendar-day:hover {
+    background: #f7fafc;
+    border-color: #3498db;
+}
+
+.calendar-day.disabled {
+    color: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.calendar-day.disabled:hover {
+    background: transparent;
+    border-color: transparent;
+}
+
+.calendar-day.available {
+    background: #e6f7ff;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.calendar-day.available:hover {
+    background: #3498db;
+    color: white;
+    transform: scale(1.1);
+}
+
+.calendar-day.selected {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    font-weight: 600;
+    border-color: #2c3e50;
+}
+
+.calendar-day.other-month {
+    color: #cbd5e0;
+}
+
+.calendar-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e6ed;
+    font-size: 0.85rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.legend-color.available {
+    background: #e6f7ff;
+    border: 1px solid #3498db;
+}
+
+.legend-color.selected {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+}
+/* Action buttons styling */
+.btn-group .btn {
+    margin: 0 2px;
+}
+
+.reschedule-action-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.reschedule-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
+    color: white;
+}
+
+.reschedule-action-btn i {
+    font-size: 1rem;
+}
+
+/* Responsive adjustments for action buttons */
+@media (max-width: 992px) {
+    .reschedule-action-btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .btn-group .btn {
+        margin: 0;
+        width: 100%;
+    }
+    
+    .reschedule-action-btn {
+        padding: 0.35rem 0.5rem;
+    }
+}
     </style>
 </head>
 <body>
@@ -607,7 +822,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
                 <!-- <th style="width: 20%;">Reason</th> -->
                 <th style="width: 15%;">Scheduled For</th>
                 <th style="width: 12%;">Requested At</th>
-                <th style="width: 8%;" class="text-center">Action</th>
+                <th style="width: 12%;" class="text-center">Actions</th>
             </tr>
         </thead>
         <tbody id="appointments-tbody">
@@ -642,15 +857,21 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
                             <small class="text-muted"><?= date('g:i A', strtotime($app['requested_at'])) ?></small>
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info view-details-btn" 
-                                    data-toggle="modal" 
-                                    data-target="#viewModal<?= $app['id'] ?>"
-                                    title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-info view-details-btn" 
+                                        data-toggle="modal" 
+                                        data-target="#viewModal<?= $app['id'] ?>"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning reschedule-action-btn" 
+                                        onclick="openRescheduleModal(<?= $app['id'] ?>)"
+                                        title="Reschedule">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
-
                     <!-- Keep the existing modal code here -->
                     <div class="modal fade" id="viewModal<?= $app['id'] ?>" tabindex="-1">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -690,11 +911,11 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
 
                                     <div class="info-section">
                                         <h6><i class="fas fa-id-card mr-2"></i>Valid ID</h6>
-                                        <img src="<?= htmlspecialchars($app['valid_id_image']) ?>" 
+                                        <img src="<?= htmlspecialchars($app['id_front_image']) ?>" 
                                              alt="Valid ID" class="img-thumbnail clickable-id w-100" 
                                              style="cursor: zoom-in;"
                                              data-toggle="modal" data-target="#fullImageModal" 
-                                             data-img-src="<?= htmlspecialchars($app['valid_id_image']) ?>">
+                                             data-img-src="<?= htmlspecialchars($app['id_front_image']) ?>">
                                     </div>
 
                                     <div class="text-right mt-4">
@@ -709,6 +930,73 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="modal fade" id="rescheduleModal<?= $app['id'] ?>" tabindex="-1" data-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-calendar-alt mr-2"></i> Reschedule Appointment
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="rescheduleForm<?= $app['id'] ?>" class="reschedule-form">
+                                    <input type="hidden" name="appointment_id" value="<?= $app['id'] ?>">
+                                    <input type="hidden" name="old_date_id" value="<?= $app['available_date_id'] ?>">
+                                    <input type="hidden" name="old_time_slot" value="<?= date('H:i:s', strtotime($app['scheduled_for'])) ?>">
+                                    
+                                    <input type="hidden" name="new_date_id" id="new_date_id_<?= $app['id'] ?>">
+
+                                    <div class="form-group">
+                                        <label><strong>Current Schedule:</strong></label>
+                                        <p class="text-muted border-bottom pb-2">
+                                            <?= date('F j, Y • g:i A', strtotime($app['scheduled_for'])) ?>
+                                        </p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Select New Date <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control date-picker-input" 
+                                            data-id="<?= $app['id'] ?>" 
+                                            name="selected_date" 
+                                            min="<?= date('Y-m-d') ?>" required>
+                                        <small class="text-muted">Only dates with available slots set by Admin will be valid.</small>
+                                    </div>
+
+                                    <div id="loadingSlots<?= $app['id'] ?>" class="text-center my-3" style="display:none;">
+                                        <div class="spinner-border text-primary spinner-border-sm" role="status"></div> Checking availability...
+                                    </div>
+
+                                    <div id="dateError<?= $app['id'] ?>" class="alert alert-danger p-2" style="display:none; font-size:0.9rem;"></div>
+
+                                    <div class="form-group" id="timeSlotContainer<?= $app['id'] ?>" style="display:none;">
+                                        <label>Select Time Slot <span class="text-danger">*</span></label>
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="custom-control custom-radio mb-2">
+                                                <input type="radio" id="amSlot<?= $app['id'] ?>" name="new_time_slot" value="09:00:00" class="custom-control-input" disabled>
+                                                <label class="custom-control-label" for="amSlot<?= $app['id'] ?>">Morning (9:00 AM)</label>
+                                                <span class="badge badge-success float-right am-badge">Available</span>
+                                            </div>
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" id="pmSlot<?= $app['id'] ?>" name="new_time_slot" value="14:00:00" class="custom-control-input" disabled>
+                                                <label class="custom-control-label" for="pmSlot<?= $app['id'] ?>">Afternoon (2:00 PM)</label>
+                                                <span class="badge badge-success float-right pm-badge">Available</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-right mt-4">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-warning save-btn" disabled>
+                                            <i class="fas fa-save mr-2"></i> Update Schedule
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
@@ -735,60 +1023,45 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 </div>
-
 <script>
 $(document).ready(function () {
-function applyFilters() {
-    const searchVal = $('#searchInput').val().toLowerCase();
-    const selectedService = $('#serviceFilter').val().toLowerCase();
 
-    $('.appointment-row').each(function () {
-        const text = $(this).text().toLowerCase();
-        const service = $(this).data('service');
+    // ==========================================
+    // 1. FILTERS & SEARCH LOGIC (Keep Existing)
+    // ==========================================
+    function applyFilters() {
+        const searchVal = $('#searchInput').val().toLowerCase();
+        const selectedService = $('#serviceFilter').val().toLowerCase();
 
-        const matchesSearch = text.includes(searchVal);
-        const matchesService = selectedService === "" || service === selectedService;
+        $('.appointment-row').each(function () {
+            const text = $(this).text().toLowerCase();
+            const service = $(this).data('service');
 
-        $(this).toggle(matchesSearch && matchesService);
-    });
+            const matchesSearch = text.includes(searchVal);
+            const matchesService = selectedService === "" || service === selectedService;
 
-    // Show/hide empty state
-    const visibleRows = $('.appointment-row:visible').length;
-    if (visibleRows === 0 && $('#appointments-tbody tr').length > 0) {
-        if ($('#no-results-row').length === 0) {
-            $('#appointments-tbody').append(`
-                <tr id="no-results-row">
-                    <td colspan="7" class="text-center py-5">
-                        <div class="empty-state">
-                            <i class="fas fa-search"></i>
-                            <p>No appointments match your search criteria</p>
-                        </div>
-                    </td>
-                </tr>
-            `);
-        }
-    } else {
-        $('#no-results-row').remove();
-    }
-}
-
-    $(document).on('click', '.complete-btn', function () {
-        const id = $(this).data('id');
-        $.post('complete_appointment.php', { appointment_id: id }, function (res) {
-            const r = JSON.parse(res);
-            if (r.success) location.reload();
+            $(this).toggle(matchesSearch && matchesService);
         });
-    });
 
-    $(document).on('click', '.delete-btn', function () {
-        const id = $(this).data('id');
-        if (confirm('Are you sure you want to delete this appointment?')) {
-            $.post('delete_appointment.php', { appointment_id: id }, function (res) {
-                const r = JSON.parse(res);
-                if (r.success) location.reload();
-            });
+        // Handle "No Results" row
+        const visibleRows = $('.appointment-row:visible').length;
+        if (visibleRows === 0 && $('#appointments-tbody tr').length > 0) {
+            if ($('#no-results-row').length === 0) {
+                $('#appointments-tbody').append(`
+                    <tr id="no-results-row">
+                        <td colspan="7" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <p>No appointments match your search criteria</p>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            }
+        } else {
+            $('#no-results-row').remove();
         }
-    });
+    }
 
     $('#searchInput').on('input', applyFilters);
     $('#serviceFilter').on('change', applyFilters);
@@ -796,24 +1069,232 @@ function applyFilters() {
     $('#clearFilters').click(function () {
         $('#searchInput').val('');
         $('#serviceFilter').val('');
-        $('.appointment-card').show();
+        $('.appointment-row').show();
+        $('#no-results-row').remove();
     });
 
-    // Full image modal
+
+    // ==========================================
+    // 2. APPOINTMENT ACTIONS (Complete/Delete)
+    // ==========================================
+    $(document).on('click', '.complete-btn', function () {
+        const id = $(this).data('id');
+        if(confirm('Mark this appointment as completed?')) {
+            $.post('complete_appointment.php', { appointment_id: id }, function (res) {
+                // Assuming your PHP returns JSON, safety check
+                try {
+                    const r = JSON.parse(res);
+                    if (r.success) location.reload();
+                    else alert('Error: ' + (r.message || 'Unknown error'));
+                } catch(e) { location.reload(); }
+            });
+        }
+    });
+
+    $(document).on('click', '.delete-btn', function () {
+        const id = $(this).data('id');
+        if (confirm('Are you sure you want to delete this appointment?')) {
+            $.post('delete_appointment.php', { appointment_id: id }, function (res) {
+                try {
+                    const r = JSON.parse(res);
+                    if (r.success) location.reload();
+                    else alert('Error: ' + (r.message || 'Unknown error'));
+                } catch(e) { location.reload(); }
+            });
+        }
+    });
+
+
+    // ==========================================
+    // 3. IMAGE MODAL LOGIC
+    // ==========================================
     $('.clickable-id').on('click', function () {
         const src = $(this).data('img-src');
         $('#fullImage').attr('src', src);
     });
 
+    // Fix for nested modals scrolling issue
     $('#fullImageModal').on('hidden.bs.modal', function () {
-        $('body').addClass('modal-open');
+        if ($('.modal.show').length) {
+            $('body').addClass('modal-open');
+        }
     });
+
+
+    // ==========================================
+    // 4. NEW RESCHEDULE LOGIC (Date Picker + AJAX)
+    // ==========================================
+
+    // A. Handle Date Selection
+    $('.date-picker-input').on('change', function() {
+        const dateInput = $(this);
+        const appointmentId = dateInput.data('id');
+        const selectedDate = dateInput.val();
+        
+        // UI Elements
+        const loader = $(`#loadingSlots${appointmentId}`);
+        const errorDiv = $(`#dateError${appointmentId}`);
+        const slotContainer = $(`#timeSlotContainer${appointmentId}`);
+        const saveBtn = $(`#rescheduleModal${appointmentId} .save-btn`);
+        const hiddenDateId = $(`#new_date_id_${appointmentId}`);
+
+        // Reset UI State
+        errorDiv.hide();
+        slotContainer.hide();
+        saveBtn.prop('disabled', true);
+        $(`input[name="new_time_slot"]`).prop('checked', false).prop('disabled', true);
+        
+        // Reset badges
+        $('.am-badge, .pm-badge').removeClass('badge-success badge-secondary').text('');
+
+        if (!selectedDate) return;
+
+        loader.show();
+
+        // Check Availability via AJAX
+        $.ajax({
+            url: 'check_availability.php',
+            type: 'POST',
+            data: { date: selectedDate },
+            dataType: 'json',
+            success: function(response) {
+                loader.hide();
+
+                if (response.status === 'available') {
+                    // Success: Store ID and show slots
+                    hiddenDateId.val(response.date_id);
+                    slotContainer.fadeIn();
+
+                    // Setup AM Slot
+                    const amRadio = $(`#amSlot${appointmentId}`);
+                    if (response.am_open) {
+                        amRadio.prop('disabled', false);
+                        amRadio.siblings('.am-badge').addClass('badge-success').text('Available');
+                    } else {
+                        amRadio.prop('disabled', true);
+                        amRadio.siblings('.am-badge').addClass('badge-secondary').text('Full');
+                    }
+
+                    // Setup PM Slot
+                    const pmRadio = $(`#pmSlot${appointmentId}`);
+                    if (response.pm_open) {
+                        pmRadio.prop('disabled', false);
+                        pmRadio.siblings('.pm-badge').addClass('badge-success').text('Available');
+                    } else {
+                        pmRadio.prop('disabled', true);
+                        pmRadio.siblings('.pm-badge').addClass('badge-secondary').text('Full');
+                    }
+
+                } else {
+                    // Error: Date not found or full
+                    errorDiv.html('<i class="fas fa-exclamation-circle"></i> ' + response.message).fadeIn();
+                }
+            },
+            error: function() {
+                loader.hide();
+                errorDiv.text('Server connection error. Please try again.').show();
+            }
+        });
+    });
+
+    // B. Enable Save Button when Time Slot is selected
+// B. Enable Save Button when Time Slot is selected
+$(document).on('change click', 'input[name="new_time_slot"]', function() {
+    console.log("Time slot selected: " + $(this).val()); // Debug check
+    
+    // Find the form that this specific radio button belongs to
+    const form = $(this).closest('form');
+    
+    // Find the save button inside that form and enable it
+    const saveBtn = form.find('.save-btn');
+    saveBtn.prop('disabled', false);
+    saveBtn.removeAttr('disabled'); // Extra safety for some browsers
 });
-$('#clearFilters').click(function () {
-    $('#searchInput').val('');
-    $('#serviceFilter').val('');
-    $('.appointment-row').show();
-    $('#no-results-row').remove();
+
+    // C. Handle Form Submission
+    $('.reschedule-form').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const btn = form.find('.save-btn');
+        const originalText = btn.html();
+
+        if(!form.find('input[name="new_time_slot"]:checked').val()) {
+            showNotification('error', 'Please select a time slot (AM or PM).');
+            return;
+        }
+
+        // Loading State
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        $.ajax({
+            url: 'process_reschedule.php',
+            type: 'POST',
+            data: form.serialize(),
+            success: function(res) {
+                // Parse if string, otherwise use object
+                const response = typeof res === 'string' ? JSON.parse(res) : res;
+                
+                if (response.success) {
+                    $('#rescheduleModal' + form.find('input[name="appointment_id"]').val()).modal('hide');
+                    showNotification('success', 'Appointment Rescheduled Successfully!');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('error', response.message || 'Update failed.');
+                    btn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function() {
+                showNotification('error', 'System error occurred.');
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    // ==========================================
+    // 5. HELPER FUNCTIONS
+    // ==========================================
+
+    // Opens the modal (called by the button in your PHP loop)
+    window.openRescheduleModal = function(appointmentId) {
+        // Close "View Details" modal if it's open
+        $(`#viewModal${appointmentId}`).modal('hide');
+        
+        // Wait for CSS transition, then open Reschedule modal
+        setTimeout(() => {
+            $(`#rescheduleModal${appointmentId}`).modal('show');
+            
+            // Reset the form inside the modal
+            const form = $(`#rescheduleForm${appointmentId}`);
+            form[0].reset(); 
+            $(`#loadingSlots${appointmentId}`).hide();
+            $(`#dateError${appointmentId}`).hide();
+            $(`#timeSlotContainer${appointmentId}`).hide();
+            form.find('.save-btn').prop('disabled', true);
+            form.find('.badge').text('').removeClass('badge-success badge-secondary');
+        }, 300);
+    };
+
+    function showNotification(type, message) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        
+        const notification = $(`
+            <div class="alert ${alertClass} alert-dismissible fade show notification-toast" role="alert" style="
+                position: fixed; top: 20px; right: 20px; z-index: 9999;
+                min-width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                animation: slideInRight 0.4s ease;">
+                <i class="fas ${icon} mr-2"></i>
+                <strong>${message}</strong>
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+        `);
+        
+        $('body').append(notification);
+        setTimeout(() => {
+            notification.fadeOut(300, function() { $(this).remove(); });
+        }, 5000);
+    }
+
 });
 </script>
 </body>

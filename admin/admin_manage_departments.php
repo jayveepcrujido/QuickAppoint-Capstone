@@ -51,7 +51,7 @@ while ($row = $stmt->fetch()) {
         :root {
             --primary-dark: #2c3e50;
             --primary-light: #3498db;
-            --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            --primary-gradient: linear-gradient(135deg, #0D92F4, #27548A);
             --secondary-gradient: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
             --success-gradient: linear-gradient(135deg, #27ae60 0%, #229954 100%);
             --warning-gradient: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
@@ -76,14 +76,14 @@ while ($row = $stmt->fetch()) {
 
         /* Header Styles */
         .page-header {
-            border-radius: 20px;
             background: var(--primary-gradient);
             color: white;
-            padding: 2rem 0;
+            padding: 2rem;
             margin-bottom: 2.5rem;
             box-shadow: 0 4px 20px rgba(44, 62, 80, 0.15);
             position: relative;
             overflow: hidden;
+            border-radius: 20px;
         }
 
         .page-header::before {
@@ -97,9 +97,9 @@ while ($row = $stmt->fetch()) {
             opacity: 0.6;
         }
 
-        .page-header .container {
+        .page-header > div {
             position: relative;
-            z-index: 1;
+            z-index: 2; /* Increased just to be safe */
         }
 
         .page-title {
@@ -877,12 +877,46 @@ while ($row = $stmt->fetch()) {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+        /* Add this to your style block */
+        .btn-danger-custom {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            border: none;
+            color: white;
+            padding: 0.875rem 2.25rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-danger-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
+            color: white;
+        }
+        .service-item .remove-btn {
+            opacity: 0;
+            transition: var(--transition);
+            min-width: 36px;
+            height: 36px;
+        }
+
+        .service-item:hover .remove-btn {
+            opacity: 1;
+        }
+
+        .service-item .d-flex {
+            gap: 1rem;
+        }
     </style>
 </head>
 <body>
     <!-- Page Header -->
-    <div class="page-header">
-        <div class="container">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <h3 class="page-title">
                     <i class='bx bx-buildings'></i>
@@ -993,28 +1027,39 @@ while ($row = $stmt->fetch()) {
                                     <i class='bx bx-list-check'></i>
                                     Services & Requirements
                                 </p>
-                                <?php if (isset($serviceMap[$d['id']])): ?>
-                                    <?php foreach ($serviceMap[$d['id']] as $svc): ?>
-                                        <div class="service-item">
-                                            <div class="service-name">
-                                                <i class='bx bx-check-circle'></i>
-                                                <?= htmlspecialchars($svc['name']) ?>
+                                    <?php if (isset($serviceMap[$d['id']])): ?>
+                                        <?php foreach ($serviceMap[$d['id']] as $svcId => $svc): ?>
+                                            <div class="service-item">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="flex-grow-1">
+                                                        <div class="service-name">
+                                                            <i class='bx bx-check-circle'></i>
+                                                            <?= htmlspecialchars($svc['name']) ?>
+                                                        </div>
+                                                        <?php if (!empty($svc['requirements'])): ?>
+                                                            <ul class="requirement-list">
+                                                                <?php foreach ($svc['requirements'] as $req): ?>
+                                                                    <li>
+                                                                        <i class='bx bx-right-arrow-alt'></i>
+                                                                        <span><?= htmlspecialchars($req) ?></span>
+                                                                    </li>
+                                                                <?php endforeach; ?>
+                                                            </ul>
+                                                        <?php else: ?>
+                                                            <p class="text-muted mb-0"><em>No specific requirements</em></p>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <button type="button" 
+                                                            class="btn btn-sm remove-btn delete-service-btn ml-3" 
+                                                            data-service-id="<?= $svcId ?>"
+                                                            data-service-name="<?= htmlspecialchars($svc['name']) ?>"
+                                                            title="Delete Service">
+                                                        <i class='bx bx-trash'></i>
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <?php if (!empty($svc['requirements'])): ?>
-                                                <ul class="requirement-list">
-                                                    <?php foreach ($svc['requirements'] as $req): ?>
-                                                        <li>
-                                                            <i class='bx bx-right-arrow-alt'></i>
-                                                            <span><?= htmlspecialchars($req) ?></span>
-                                                        </li>
-                                                    <?php endforeach; ?>
-                                                </ul>
-                                            <?php else: ?>
-                                                <p class="text-muted mb-0"><em>No specific requirements</em></p>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
                                     <div class="empty-state">
                                         <i class='bx bx-package'></i>
                                         <h4>No Services Available</h4>
@@ -1023,16 +1068,19 @@ while ($row = $stmt->fetch()) {
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-custom" data-dismiss="modal">
-                                <i class='bx bx-x'></i>
-                                Close
-                            </button>
-                            <button class="btn btn-warning-custom" data-dismiss="modal" data-toggle="modal" data-target="#editModal<?= $d['id'] ?>">
-                                <i class='bx bx-edit'></i>
-                                Edit Department
-                            </button>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-custom" data-dismiss="modal">
+                            <i class='bx bx-x'></i> Close
+                        </button>
+                        
+                        <button type="button" class="btn btn-danger-custom delete-dept-btn" data-id="<?= $d['id'] ?>">
+                            <i class='bx bx-trash'></i> Delete Department
+                        </button>
+
+                        <button class="btn btn-warning-custom edit-dept-btn" data-dept-id="<?= $d['id'] ?>">
+                            <i class='bx bx-edit'></i> Edit Department
+                        </button>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -1040,7 +1088,7 @@ while ($row = $stmt->fetch()) {
             <!-- Edit Modal -->
             <div class="modal fade" id="editModal<?= $d['id'] ?>" tabindex="-1">
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <form class="modal-content" method="post" action="ajax/ajax_update_department.php">
+                    <form class="modal-content edit-dept-form" method="post" action="ajax/ajax_update_department.php">
                         <div class="modal-header warning">
                             <h5 class="modal-title">
                                 <i class='bx bx-edit'></i>
@@ -1223,144 +1271,458 @@ while ($row = $stmt->fetch()) {
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    $(document).ready(function() {
-        // Add Service in Add Modal
-        $(document).on('click', '#addService', function() {
-            const group = `
-                <div class="service-group mb-3">
-                    <div class="input-group mb-2">
-                        <input type="text" name="services[]" class="form-control form-control-custom" placeholder="Enter a service" required>
-                        <div class="input-group-append">
-                            <button type="button" class="btn remove-btn removeService">
-                                <i class='bx bx-x'></i>
-                            </button>
-                        </div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function() {
+    
+    // --- MODAL STATE MANAGEMENT ---
+    let isModalTransitioning = false;
+
+    // Force cleanup on any modal hide
+    $('.modal').on('hidden.bs.modal', function() {
+        cleanupModals();
+        isModalTransitioning = false;
+    });
+
+    // --- 1. SEARCH FUNCTIONALITY ---
+    $('#searchInput').on('input', function() {
+        const val = $(this).val().toLowerCase();
+        let visibleCount = 0;
+        
+        $('.dept-card-wrapper').each(function() {
+            const searchable = $(this).data('search');
+            const isVisible = searchable.includes(val);
+            $(this).toggle(isVisible);
+            if (isVisible) visibleCount++;
+        });
+        
+        // Handle Empty State
+        if (visibleCount === 0 && val !== '') {
+            if ($('#noResultsMessage').length === 0) {
+                $('#departmentGrid').append(`
+                    <div class="col-12 empty-state" id="noResultsMessage">
+                        <i class='bx bx-search-alt'></i>
+                        <h4>No Results Found</h4>
+                        <p>Try adjusting your search terms</p>
                     </div>
-                    <input type="text" name="requirements[]" class="form-control form-control-custom" placeholder="Requirement for above service (optional)">
-                </div>`;
-            $('#serviceFields').append(group);
-        });
-
-        // Remove Service
-        $(document).on('click', '.removeService', function() {
-            if ($('.service-group').length > 1) {
-                $(this).closest('.service-group').remove();
+                `);
             }
-        });
-
-        // Remove Requirement
-        $(document).on('click', '.remove-req', function() {
-            $(this).closest('.input-group').remove();
-        });
-
-        // Add Requirement in Edit Modal
-        $(document).on('click', '.add-req', function() {
-            const reqGroup = $(this).siblings('.requirement-group');
-            const serviceId = $(this).closest('.service-edit-block').find('input[name="service_ids[]"]').val();
-            const reqField = `
-                <div class="input-group mb-2">
-                    <input type="text" name="requirements[${serviceId}][]" class="form-control form-control-custom" placeholder="Requirement">
-                    <div class="input-group-append">
-                        <button type="button" class="btn remove-btn remove-req">
-                            <i class='bx bx-x'></i>
-                        </button>
-                    </div>
-                </div>`;
-            reqGroup.append(reqField);
-        });
-
-        // Add New Service in Edit Modal
-        $('[id^="addNewServiceBtn"]').click(function() {
-            const deptId = $(this).attr('id').replace('addNewServiceBtn', '');
-            const timestamp = Date.now();
-            const block = `
-                <div class="service-edit-block">
-                    <input type="hidden" name="service_ids[]" value="new">
-                    <input type="text" name="service_names[]" class="form-control form-control-custom mb-3" placeholder="Service Name" required>
-                    <div class="requirement-group">
-                        <div class="input-group mb-2">
-                            <input type="text" name="requirements[new_${timestamp}][]" class="form-control form-control-custom" placeholder="Requirement">
-                            <div class="input-group-append">
-                                <button type="button" class="btn remove-btn remove-req">
-                                    <i class='bx bx-x'></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-outline-custom btn-sm-custom add-req">
-                        <i class='bx bx-plus'></i>
-                        Add Requirement
-                    </button>
-                </div>`;
-            $(this).siblings('.service-edit-area').append(block);
-        });
-
-        // Submit Add Form
-        $('#addForm').submit(function(e) {
-            e.preventDefault();
-            if (confirm("Add this department and services?")) {
-                $.post('ajax/ajax_add_department_with_services.php', $(this).serialize(), function(response) {
-                    location.reload();
-                }).fail(function(xhr) {
-                    alert("Error: " + xhr.responseText);
-                });
-            }
-        });
-
-        // Search Functionality
-        $('#searchInput').on('input', function() {
-            const val = $(this).val().toLowerCase();
-            $('.dept-card-wrapper').each(function() {
-                const searchable = $(this).data('search');
-                $(this).toggle(searchable.includes(val));
-            });
-            
-            // Show empty state if no results
-            if ($('.dept-card-wrapper:visible').length === 0 && val !== '') {
-                if ($('#noResultsMessage').length === 0) {
-                    $('#departmentGrid').append(`
-                        <div class="col-12 empty-state" id="noResultsMessage">
-                            <i class='bx bx-search-alt'></i>
-                            <h4>No Results Found</h4>
-                            <p>Try adjusting your search terms</p>
-                        </div>
-                    `);
-                }
-            } else {
-                $('#noResultsMessage').remove();
-            }
-        });
-
-        // Clear Filters
-        $('#clearFilters').click(function() {
-            $('#searchInput').val('');
-            $('.dept-card-wrapper').show();
+        } else {
             $('#noResultsMessage').remove();
-        });
+        }
+    });
 
-        // Submit Edit Forms
-        $('form[action=ajax/"ajax_update_department.php"]').on('submit', function(e) {
-            e.preventDefault();
-            const form = $(this);
-            if (confirm("Save changes to this department?")) {
-                $.post(form.attr('action'), form.serialize(), function(response) {
-                    form.closest('.modal').modal('hide');
-                    setTimeout(() => { location.reload(); }, 500);
-                }).fail(function(xhr) {
-                    alert("Update failed: " + xhr.responseText);
-                });
-            }
-        });
+    $('#clearFilters').click(function() {
+        $('#searchInput').val('').trigger('input');
+    });
 
-        // Smooth scroll to top when modal closes
-        $('.modal').on('hidden.bs.modal', function() {
-            $('body').removeClass('modal-open');
-            $('.modal-backdrop').remove();
+    // --- 2. DYNAMIC INPUT FIELDS (Event Delegation) ---
+
+    // Add Service (Add Modal)
+    $(document).on('click', '#addService', function() {
+        const group = `
+            <div class="service-group mb-3">
+                <div class="input-group mb-2">
+                    <input type="text" name="services[]" class="form-control form-control-custom" placeholder="Enter a service" required>
+                    <div class="input-group-append">
+                        <button type="button" class="btn remove-btn removeService"><i class='bx bx-x'></i></button>
+                    </div>
+                </div>
+                <input type="text" name="requirements[]" class="form-control form-control-custom" placeholder="Requirement (optional)">
+            </div>`;
+        $('#serviceFields').append(group);
+    });
+
+    // Add Service (Edit Modal)
+    $(document).on('click', '[id^="addNewServiceBtn"]', function() {
+        const timestamp = Date.now();
+        const uniqueId = 'new_' + timestamp;
+        const block = `
+            <div class="service-edit-block">
+                <input type="hidden" name="service_ids[]" value="${uniqueId}">
+                <input type="text" name="service_names[]" class="form-control form-control-custom mb-3" placeholder="Service Name" required>
+                <div class="requirement-group">
+                    <div class="input-group mb-2">
+                        <input type="text" name="requirements[${uniqueId}][]" class="form-control form-control-custom" placeholder="Requirement">
+                        <div class="input-group-append">
+                            <button type="button" class="btn remove-btn remove-req"><i class='bx bx-x'></i></button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-custom btn-sm-custom add-req">
+                    <i class='bx bx-plus'></i> Add Requirement
+                </button>
+            </div>`;
+        $(this).siblings('.service-edit-area').append(block);
+    });
+
+    // Add Requirement (Edit Modal)
+    $(document).on('click', '.add-req', function() {
+        const reqGroup = $(this).siblings('.requirement-group');
+        const serviceId = $(this).closest('.service-edit-block').find('input[name="service_ids[]"]').val();
+        
+        const reqField = `
+            <div class="input-group mb-2">
+                <input type="text" name="requirements[${serviceId}][]" class="form-control form-control-custom" placeholder="Requirement">
+                <div class="input-group-append">
+                    <button type="button" class="btn remove-btn remove-req"><i class='bx bx-x'></i></button>
+                </div>
+            </div>`;
+        reqGroup.append(reqField);
+    });
+
+    // Remove buttons
+    $(document).on('click', '.removeService', function() {
+        if ($('.service-group').length > 1) $(this).closest('.service-group').remove();
+    });
+    
+    $(document).on('click', '.remove-req', function() {
+        $(this).closest('.input-group').remove();
+    });
+
+    // --- 3. FORM SUBMISSIONS ---
+
+    // ADD DEPARTMENT
+    $('#addForm').on('submit', function(e) {
+        e.preventDefault();
+        submitAjaxForm($(this), 'ajax/ajax_add_department_with_services.php', '#addModal', true);
+    });
+
+    // UPDATE DEPARTMENT (Delegated)
+    $(document).on('submit', '.edit-dept-form', function(e) {
+        e.preventDefault();
+        const modalId = $(this).closest('.modal').attr('id');
+        submitAjaxForm($(this), $(this).attr('action'), '#' + modalId, false);
+    });
+
+    // DELETE DEPARTMENT (Delegated)
+    $(document).on('click', '.delete-dept-btn', function() {
+        const deptId = $(this).data('id');
+        const modalId = $(this).closest('.modal').attr('id');
+        
+        if (confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
+            const btn = $(this);
+            const originalText = btn.html();
+            btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Deleting...');
+
+            $.ajax({
+                url: 'ajax/ajax_delete_department.php',
+                method: 'POST',
+                data: { id: deptId },
+                dataType: 'json',
+                success: function(response) {
+                    closeModalSafely('#' + modalId);
+                    showNotification(response.message || 'Department deleted successfully', 'success');
+                    loadDepartmentData();
+                },
+                error: function(xhr) {
+                    btn.prop('disabled', false).html(originalText);
+                    let errorMsg = "Failed to delete department";
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg = response.message || errorMsg;
+                    } catch(e) {
+                        errorMsg = xhr.responseText || errorMsg;
+                    }
+                    showNotification(errorMsg, 'error');
+                }
+            });
+        }
+    });
+
+    // DELETE SERVICE (Delegated)
+    $(document).on('click', '.delete-service-btn', function() {
+        const serviceId = $(this).data('service-id');
+        const serviceName = $(this).data('service-name');
+        
+        if (confirm(`Are you sure you want to delete the service "${serviceName}"? This will also delete all its requirements.`)) {
+            const btn = $(this);
+            const originalText = btn.html();
+            btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i>');
+
+            $.ajax({
+                url: 'ajax/ajax_delete_service.php',
+                method: 'POST',
+                data: { service_id: serviceId },
+                dataType: 'json',
+                success: function(response) {
+                    showNotification(response.message || 'Service deleted successfully', 'success');
+                    
+                    // Remove the service item from view modal
+                    btn.closest('.service-item').fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Check if no services left
+                        const modal = btn.closest('.modal');
+                        if (modal.find('.service-item').length === 0) {
+                            modal.find('.service-item').parent().html(`
+                                <div class="empty-state">
+                                    <i class='bx bx-package'></i>
+                                    <h4>No Services Available</h4>
+                                    <p>This department has no services listed yet.</p>
+                                </div>
+                            `);
+                        }
+                    });
+                    
+                    // Reload data to update everything
+                    setTimeout(loadDepartmentData, 400);
+                },
+                error: function(xhr) {
+                    btn.prop('disabled', false).html(originalText);
+                    let errorMsg = "Failed to delete service";
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg = response.message || errorMsg;
+                    } catch(e) {
+                        errorMsg = xhr.responseText || errorMsg;
+                    }
+                    showNotification(errorMsg, 'error');
+                }
+            });
+        }
+    });
+
+    // --- 4. VIEW -> EDIT TRANSITION FIX ---
+    $(document).on('click', '.edit-dept-btn', function() {
+        if (isModalTransitioning) return;
+        isModalTransitioning = true;
+
+        const deptId = $(this).data('dept-id');
+        const viewModal = $('#viewModal' + deptId);
+        const editModal = $('#editModal' + deptId);
+
+        // Close view modal
+        viewModal.modal('hide');
+        
+        // Wait for complete closure before opening edit
+        viewModal.one('hidden.bs.modal', function() {
+            cleanupModals();
+            setTimeout(function() {
+                editModal.modal('show');
+                isModalTransitioning = false;
+            }, 150);
         });
     });
-    </script>
+
+    // --- HELPER FUNCTIONS ---
+
+    // Generic AJAX Form Submitter
+    function submitAjaxForm(form, url, modalSelector, shouldReset) {
+        if (!confirm("Are you sure you want to proceed with this action?")) return;
+
+        const btn = form.find('button[type="submit"]');
+        const originalText = btn.html();
+        btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Processing...');
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                closeModalSafely(modalSelector);
+                
+                if (shouldReset) {
+                    form[0].reset();
+                    // Remove all service groups except the first
+                    form.find('.service-group').not(':first').remove();
+                }
+
+                showNotification(response.message || 'Operation completed successfully', 'success');
+                loadDepartmentData();
+            },
+            error: function(xhr) {
+                // Handle plain text "success" response
+                if (xhr.responseText && xhr.responseText.trim() === 'success') {
+                    closeModalSafely(modalSelector);
+                    showNotification('Operation completed successfully', 'success');
+                    loadDepartmentData();
+                    return;
+                }
+                
+                // Handle other errors
+                btn.prop('disabled', false).html(originalText);
+                
+                let errorMsg = "An error occurred";
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.message || errorMsg;
+                } catch(e) {
+                    errorMsg = xhr.responseText || errorMsg;
+                }
+                
+                showNotification(errorMsg, 'error');
+            }
+        });
+    }
+
+    // Enhanced modal cleanup
+    function cleanupModals() {
+        // Remove all modal backdrops
+        $('.modal-backdrop').remove();
+        
+        // Remove modal-open class from body
+        $('body').removeClass('modal-open');
+        
+        // Reset body padding
+        $('body').css('padding-right', '');
+        
+        // Reset body overflow
+        $('body').css('overflow', '');
+    }
+
+    // Safe modal closer
+    function closeModalSafely(modalSelector) {
+        const modal = $(modalSelector);
+        
+        // Hide the modal
+        modal.modal('hide');
+        
+        // Force cleanup after a short delay
+        setTimeout(cleanupModals, 300);
+    }
+
+    // Dynamic Data Reloader - Works with AJAX-loaded pages
+    function loadDepartmentData() {
+        // Get the current page URL from the browser or use relative path
+        const currentPage = window.location.pathname.split('/').pop() || 'departments.php';
+        
+        $.ajax({
+            url: currentPage,
+            method: 'GET',
+            cache: false,
+            success: function(html) {
+                try {
+                    // Create a temporary container
+                    const $temp = $('<div>').html(html);
+                    
+                    // 1. Update Department Grid
+                    const newGridHtml = $temp.find('#departmentGrid').html();
+                    if (newGridHtml) {
+                        $('#departmentGrid').fadeOut(150, function() {
+                            $(this).html(newGridHtml).fadeIn(150);
+                        });
+                    }
+                    
+                    // 2. Update Stats with animation
+                    const $newStats = $temp.find('.stat-number');
+                    if ($newStats.length > 0) {
+                        $('.stat-number').each(function(index) {
+                            const $this = $(this);
+                            const newVal = $($newStats[index]).text();
+                            $this.fadeOut(100, function() {
+                                $(this).text(newVal).fadeIn(100);
+                            });
+                        });
+                    }
+                    
+                    // 3. Clear search
+                    $('#searchInput').val('');
+                    $('#noResultsMessage').remove();
+                    
+                    // 4. Success notification
+                    //showNotification('Data refreshed successfully', 'success');
+                    
+                } catch(e) {
+                    console.error('Parse error:', e);
+                    showNotification('Data updated', 'success');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Refresh Error:', {
+                    status: status,
+                    error: error,
+                    response: xhr.responseText
+                });
+                showNotification('Unable to refresh. Please reload manually.', 'error');
+            }
+        });
+    }
+
+    // Notification system
+    function showNotification(message, type) {
+        // Remove existing notifications
+        $('.custom-notification').remove();
+        
+        const bgColor = type === 'success' ? 'var(--success-gradient)' : 
+                       type === 'error' ? 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)' : 
+                       'var(--primary-gradient)';
+        
+        const icon = type === 'success' ? 'bx-check-circle' : 
+                    type === 'error' ? 'bx-error-circle' : 
+                    'bx-info-circle';
+        
+        const notification = $(`
+            <div class="custom-notification" style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                max-width: 400px;
+                animation: slideInRight 0.3s ease-out;
+            ">
+                <i class='bx ${icon}' style='font-size: 1.5rem;'></i>
+                <span style='font-weight: 500;'>${message}</span>
+            </div>
+        `);
+        
+        $('body').append(notification);
+        
+        // Auto remove after 3 seconds
+        setTimeout(function() {
+            notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
+    // Add animation keyframes
+    if (!$('#notificationStyles').length) {
+        $('head').append(`
+            <style id="notificationStyles">
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            </style>
+        `);
+    }
+
+    // Emergency cleanup on page click (fallback)
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.modal').length && !$(e.target).closest('[data-toggle="modal"]').length) {
+            if ($('.modal-backdrop').length > 1) {
+                cleanupModals();
+            }
+        }
+    });
+
+    // Handle browser back button
+    $(window).on('popstate', function() {
+        cleanupModals();
+    });
+    
+    // Cleanup on page unload
+    $(window).on('beforeunload', function() {
+        cleanupModals();
+    });
+});
+</script>
 </body>
 </html>

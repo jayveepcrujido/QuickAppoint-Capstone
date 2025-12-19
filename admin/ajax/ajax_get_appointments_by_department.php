@@ -11,6 +11,8 @@ include '../../conn.php';
 try {
     $departmentId = $_GET['department_id'] ?? '';
     $status = $_GET['status'] ?? '';
+    $startDate = $_GET['start_date'] ?? '';
+    $endDate = $_GET['end_date'] ?? '';
 
     // Base query
     $query = "
@@ -35,6 +37,18 @@ try {
     if (!empty($status)) {
         $query .= " AND a.status = :status";
         $params[':status'] = $status;
+    }
+
+    // Add start date filter if provided
+    if (!empty($startDate)) {
+        $query .= " AND DATE(a.scheduled_for) >= :start_date";
+        $params[':start_date'] = $startDate;
+    }
+
+    // Add end date filter if provided
+    if (!empty($endDate)) {
+        $query .= " AND DATE(a.scheduled_for) <= :end_date";
+        $params[':end_date'] = $endDate;
     }
 
     $query .= " ORDER BY r.last_name ASC, a.scheduled_for ASC LIMIT 100";

@@ -1174,7 +1174,9 @@ function loadContent(page) {
     
     <!-- Sidebar -->
     <div class="l-navbar" id="nav-bar">
-        <img src="../assets/images/Unisan_logo.png" id="sidebar-logo" alt="Sidebar Logo" class="header_img">
+        <a href="personnel_dashboard.php" style="display: block; cursor: pointer;">
+            <img src="../assets/images/Unisan_logo.png" id="sidebar-logo" alt="Sidebar Logo" class="header_img" style="cursor: pointer;">
+        </a>
         <h4 style="text-align: center; color: white;">Personnel Menu</h4>
         <nav class="nav">
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_dashboard_content.php');">
@@ -1182,6 +1184,9 @@ function loadContent(page) {
             </a>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_analytics.php');">
                 <i class='bx bx-chart-bar-big-columns'></i> <span>Analytics</span>
+            </a>
+            <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_GeoMap.php');">
+                <i class='bx bx-location-pin'></i> <span>Appointments GeoMap</span>
             </a>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_manage_appointments.php');">
                 <i class='bx bx-calendar'></i> <span>Manage Appointments</span>

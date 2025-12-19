@@ -383,6 +383,22 @@ $recentAppointments = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
         .appointments-card {
             animation: fadeIn 0.5s ease-out;
         }
+        .filter-section input[type="date"] {
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    height: auto;
+    background: white;
+    box-sizing: border-box;
+}
+
+.filter-section input[type="date"]:focus {
+    border-color: white;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+    outline: none;
+}
     </style>
 </head>
 <body>
@@ -408,6 +424,14 @@ $recentAppointments = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
                             <option value="Pending">Pending</option>
                             <option value="Completed">Completed</option>
                         </select>
+                    </div>
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label for="startDate">Start Date:</label>
+                        <input type="date" id="startDate" class="form-control" onchange="filterAppointments()">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="endDate">End Date:</label>
+                        <input type="date" id="endDate" class="form-control" onchange="filterAppointments()">
                     </div>
                 </div>
             </div>
@@ -483,13 +507,17 @@ $recentAppointments = $pdo->query($query)->fetchAll(PDO::FETCH_ASSOC);
     function filterAppointments() {
         const departmentId = $('#departmentFilter').val();
         const status = $('#statusFilter').val();
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
         
         $.ajax({
             url: 'ajax/ajax_get_appointments_by_department.php',
             method: 'GET',
             data: { 
                 department_id: departmentId,
-                status: status
+                status: status,
+                start_date: startDate,
+                end_date: endDate
             },
             success: function (data) {
                 let html = `
