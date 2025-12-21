@@ -27,7 +27,8 @@ if ($role === 'Admin') {
 } elseif ($role === 'Resident') {
     $stmt = $pdo->prepare("
         SELECT a.email, r.first_name, r.middle_name, r.last_name, r.address, r.birthday, r.age, 
-               r.sex, r.civil_status, r.valid_id_type, r.valid_id_image, r.selfie_image, r.created_at
+               r.sex, r.civil_status, r.valid_id_type, r.id_front_image, 
+               r.selfie_with_id_image, r.phone_number, r.created_at
         FROM auth a
         JOIN residents r ON a.id = r.auth_id
         WHERE a.id = ?
@@ -224,10 +225,52 @@ $full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '
     }
     
     .image-preview {
-      max-width: 200px;
+      max-width: 100%;
+      max-height: 300px;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       margin-top: 5px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .image-preview:hover {
+      transform: scale(1.02);
+    }
+    
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .image-item {
+      text-align: center;
+    }
+    
+    .image-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .btn-back {
+      display: inline-block;
+      margin: 20px 0;
+      padding: 10px 20px;
+      background: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+    }
+    
+    .btn-back:hover {
+      background: #2980b9;
+      color: white;
+      text-decoration: none;
     }
     
     @media (max-width: 768px) {
@@ -246,11 +289,19 @@ $full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '
       .profile-name {
         font-size: 24px;
       }
+      
+      .image-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <div class="profile-container">
+    <a href="javascript:history.back()" class="btn-back">
+      <i class='bx bx-arrow-back'></i> Back to Dashboard
+    </a>
+    
     <div class="profile-card">
       <!-- Profile Header -->
       <div class="profile-header">
@@ -280,6 +331,16 @@ $full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '
               Email Address
             </div>
             <div class="info-value"><?= htmlspecialchars($user['email']) ?></div>
+          </div>
+          <?php endif; ?>
+          
+          <?php if (isset($user['phone_number'])): ?>
+          <div class="info-row">
+            <div class="info-label">
+              <i class='bx bx-phone'></i>
+              Phone Number
+            </div>
+            <div class="info-value"><?= htmlspecialchars($user['phone_number']) ?></div>
           </div>
           <?php endif; ?>
           
@@ -365,7 +426,7 @@ $full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '
         <?php endif; ?>
         
         <!-- Verification Documents (Residents Only) -->
-        <?php if ($role === 'Resident' && (isset($user['valid_id_type']) || isset($user['valid_id_image']) || isset($user['selfie_image']))): ?>
+        <?php if ($role === 'Resident' && (isset($user['valid_id_type']) || isset($user['id_front_image']) || isset($user['selfie_with_id_image']))): ?>
         <div class="info-section">
           <div class="section-title">
             <i class='bx bxs-id-card'></i>
@@ -382,29 +443,47 @@ $full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '
           </div>
           <?php endif; ?>
           
-          <?php if (isset($user['valid_id_image']) && !empty($user['valid_id_image'])): ?>
           <div class="info-row">
             <div class="info-label">
               <i class='bx bx-image'></i>
-              Valid ID
+              Uploaded Documents
             </div>
             <div class="info-value">
-              <img src="<?= htmlspecialchars($user['valid_id_image']) ?>" alt="Valid ID" class="image-preview">
+              <div class="image-grid">
+                <?php if (isset($user['id_front_image']) && !empty($user['id_front_image'])): ?>
+                <div class="image-item">
+                  <div class="image-label">Valid ID</div>
+                  <?php 
+                    // Check if file exists and build correct path
+                    $id_front_path = $user['id_front_image'];
+                    if (file_exists($id_front_path)) {
+                      echo '<img src="' . htmlspecialchars($id_front_path) . '" alt="Valid ID" class="image-preview" onclick="window.open(this.src, \'_blank\')">';
+                    } else {
+                      echo '<p style="color: #999; font-style: italic;">Image file not found</p>';
+                      echo '<small style="color: #666;">Path: ' . htmlspecialchars($id_front_path) . '</small>';
+                    }
+                  ?>
+                </div>
+                <?php endif; ?>
+                
+                <?php if (isset($user['selfie_with_id_image']) && !empty($user['selfie_with_id_image'])): ?>
+                <div class="image-item">
+                  <div class="image-label">Selfie with ID</div>
+                  <?php 
+                    // Check if file exists and build correct path
+                    $selfie_path = $user['selfie_with_id_image'];
+                    if (file_exists($selfie_path)) {
+                      echo '<img src="' . htmlspecialchars($selfie_path) . '" alt="Selfie with ID" class="image-preview" onclick="window.open(this.src, \'_blank\')">';
+                    } else {
+                      echo '<p style="color: #999; font-style: italic;">Image file not found</p>';
+                      echo '<small style="color: #666;">Path: ' . htmlspecialchars($selfie_path) . '</small>';
+                    }
+                  ?>
+                </div>
+                <?php endif; ?>
+              </div>
             </div>
           </div>
-          <?php endif; ?>
-          
-          <?php if (isset($user['selfie_image']) && !empty($user['selfie_image'])): ?>
-          <div class="info-row">
-            <div class="info-label">
-              <i class='bx bx-camera'></i>
-              Selfie Photo
-            </div>
-            <div class="info-value">
-              <img src="<?= htmlspecialchars($user['selfie_image']) ?>" alt="Selfie" class="image-preview">
-            </div>
-          </div>
-          <?php endif; ?>
         </div>
         <?php endif; ?>
       </div>
