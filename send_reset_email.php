@@ -274,3 +274,115 @@ function sendAppointmentConfirmation($recipientEmail, $recipientName, $appointme
         return false;
     }
 }
+
+
+function sendRescheduleNotification($recipientEmail, $recipientName, $details) {
+    $mail = new PHPMailer(true);
+    try {
+        // SMTP Settings
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'jvcrujido@gmail.com'; 
+        $mail->Password   = 'jqwcysmffzbxoeaj'; 
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+
+        $mail->setFrom('jvcrujido@gmail.com', 'LGU Quick Appoint');
+        $mail->addAddress($recipientEmail, $recipientName);
+        $mail->isHTML(true);
+        $mail->Subject = 'Appointment Rescheduled: ' . $details['service_name'];
+        
+        $mail->Body = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;'>
+            <div style='background: linear-gradient(to right, #0d94f4bc, #27548ac3); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;'>
+                <h2 style='color: white; margin: 0;'>Appointment Update</h2>
+            </div>
+            <div style='background: white; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);'>
+                <p>Hi <strong>{$recipientName}</strong>,</p>
+                <p>Your appointment has been successfully rescheduled.</p>
+                
+                <div style='background: #fff3e0; border-left: 4px solid #27548ac3; padding: 15px; margin: 20px 0;'>
+                    <p style='margin: 5px 0;'><strong>Service:</strong> {$details['service_name']}</p>
+                    <p style='margin: 5px 0;'><strong>New Date:</strong> {$details['new_date']}</p>
+                    <p style='margin: 5px 0;'><strong>New Time:</strong> {$details['new_time']}</p>
+                    <p style='margin: 5px 0;'><strong>Reference:</strong> {$details['transaction_id']}</p>
+                </div>
+                
+                <p style='font-size: 12px; color: #7f8c8d;'>If you did not request this change, please contact us immediately.</p>
+            </div>
+        </div>";
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Resident Email Error: " . $mail->ErrorInfo);
+        return false;
+    }
+}
+
+function sendPersonnelRescheduleNotification($recipientEmail, $recipientName, $details) {
+    $mail = new PHPMailer(true);
+
+    try {
+        // 1. Server Settings (Same as your working resident email)
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'jvcrujido@gmail.com'; 
+        $mail->Password   = 'jqwcysmffzbxoeaj'; 
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+
+        // 2. Sender & Recipient
+        $mail->setFrom('jvcrujido@gmail.com', 'LGU System Admin'); 
+        $mail->addAddress($recipientEmail, $recipientName);
+
+        // 3. Email Content
+        $mail->isHTML(true);
+        $mail->Subject = 'Activity Log: Appointment Rescheduled';
+        
+        $mail->Body = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4; padding: 20px;'>
+            <div style='background: #2c3e50; padding: 15px 20px; color: white; border-radius: 5px 5px 0 0;'>
+                <h3 style='margin: 0;'>System Activity Log</h3>
+            </div>
+            <div style='background: white; padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;'>
+                <p>Hi <strong>{$recipientName}</strong>,</p>
+                <p>You have successfully rescheduled an appointment. Here are the details of your action:</p>
+                
+                <div style='background: #e8f4fd; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0;'>
+                    <table style='width: 100%; border-collapse: collapse;'>
+                        <tr>
+                            <td style='padding: 5px 0; color: #666; width: 120px;'>Resident:</td>
+                            <td style='font-weight: bold;'>{$details['resident_name']}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 5px 0; color: #666;'>Service:</td>
+                            <td style='font-weight: bold;'>{$details['service_name']}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 5px 0; color: #666;'>New Schedule:</td>
+                            <td style='font-weight: bold; color: #27ae60;'>{$details['new_date']} @ {$details['new_time']}</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 5px 0; color: #666;'>Transaction ID:</td>
+                            <td style='font-family: monospace;'>{$details['transaction_id']}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <p style='font-size: 12px; color: #999; margin-top: 30px;'>
+                    Action performed on: " . date('F j, Y g:i A') . "
+                </p>
+            </div>
+        </div>";
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        // Log error but don't stop the script
+        error_log("Personnel Email Error: " . $mail->ErrorInfo);
+        return false;
+    }
+}

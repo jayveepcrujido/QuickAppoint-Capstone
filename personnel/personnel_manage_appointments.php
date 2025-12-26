@@ -7,7 +7,6 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'LGU Personnel') {
     exit();
 }
 
-// Get the logged-in personnel's department_id
 $stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_id = ?");
 $stmt->execute([$_SESSION['auth_id']]);
 $department_id = $stmt->fetchColumn();
@@ -17,14 +16,13 @@ if (!$department_id) {
     exit();
 }
 
-// Get pending appointments
+// 1. Get Pending Appointments
 $query = "
     SELECT 
         a.id, a.transaction_id, a.status, a.reason, a.scheduled_for, a.requested_at, a.available_date_id,
         r.first_name, r.middle_name, r.last_name, r.address, r.birthday, r.age, r.sex, r.civil_status,
         r.id_front_image, r.id_back_image, r.selfie_with_id_image,
-        au.email,
-        ds.service_name
+        au.email, ds.service_name
     FROM appointments a
     JOIN residents r ON a.resident_id = r.id
     JOIN auth au ON r.auth_id = au.id
@@ -37,10 +35,15 @@ $appointments = $pdo->prepare($query);
 $appointments->execute([$department_id]);
 $appointmentData = $appointments->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch unique services for filter
+// 2. Fetch Unique Services
 $serviceQuery = $pdo->prepare("SELECT DISTINCT ds.service_name FROM appointments a LEFT JOIN department_services ds ON a.service_id = ds.id WHERE a.department_id = ?");
 $serviceQuery->execute([$department_id]);
 $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
+
+// 3. Stats
+$statsQuery = $pdo->prepare("SELECT COUNT(*) as total_pending, COUNT(CASE WHEN DATE(scheduled_for) = CURDATE() THEN 1 END) as today_pending, COUNT(CASE WHEN YEARWEEK(scheduled_for) = YEARWEEK(NOW()) THEN 1 END) as week_pending, COUNT(CASE WHEN MONTH(scheduled_for) = MONTH(NOW()) AND YEAR(scheduled_for) = YEAR(NOW()) THEN 1 END) as month_pending FROM appointments WHERE department_id = ? AND status = 'Pending'");
+$statsQuery->execute([$department_id]);
+$stats = $statsQuery->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -51,24 +54,22 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
     <title>Manage Appointments</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    
     <style>
         body { background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%); font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 2rem 0; }
         .page-header { background: linear-gradient(135deg, #0D92F4, #27548A); border-radius: 15px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); color: white; }
-        .filter-section { background: white; border-radius: 15px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08); }
-        .table-responsive { background: white; border-radius: 15px; padding: 1.5rem; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08); }
         
-        /* Table Styling */
+        .stat-card { background: white; border-radius: 12px; padding: 1.5rem; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.08); transition: transform 0.3s; height: 100%; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card i { font-size: 2.5rem; color: #3498db; margin-bottom: 0.5rem; }
+        .stat-card h3 { font-size: 2rem; font-weight: 700; margin: 0.5rem 0; color: #2c3e50; }
+        
+        .filter-section, .table-responsive { background: white; border-radius: 15px; padding: 1.5rem; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08); margin-bottom: 2rem; }
         #appointments-table thead { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; }
         #appointments-table th { border: none; padding: 1rem; vertical-align: middle; }
         #appointments-table td { vertical-align: middle; padding: 1rem; color: #4a5568; }
-        #appointments-table tr { transition: all 0.3s; border-bottom: 1px solid #e0e6ed; }
-        .btn-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none; }
-        .btn-warning:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4); color: white; }
-        .btn-info { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); border: none; }
         .table-success { background-color: #d4edda !important; transition: background-color 1s ease; }
-
-        /* === DATE CARD STYLES (From No-Show Page) === */
+        
+        /* === CARD GRID STYLES (New) === */
         .dates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; max-height: 400px; overflow-y: auto; padding: 0.5rem; }
         .date-card { border: 2px solid #e0e6ed; border-radius: 12px; padding: 1rem; cursor: default; background: white; position: relative; transition: all 0.2s; }
         .date-card.active-date { border-color: #3498db; background: #f0f7ff; box-shadow: 0 0 10px rgba(52, 152, 219, 0.2); }
@@ -76,9 +77,11 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         .time-slot-option:hover { background: #e2e6ea; border-color: #adb5bd; }
         .time-slot-option.selected { background: #d4edda; border-color: #28a745; color: #155724; font-weight: bold; }
         .time-slot-option.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .info-section { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
         .clickable-id { cursor: zoom-in; transition: transform 0.2s; }
         .clickable-id:hover { transform: scale(1.02); }
-        .info-section { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        .table-warning { background-color: #fff3cd !important; transition: background-color 0.3s ease;}
+        tr.table-success {background-color: #d4edda !important;transition: background-color 1s ease;}
     </style>
 </head>
 <body>
@@ -89,24 +92,25 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
         <p>Review and process pending appointment requests</p>
     </div>
 
+    <div class="row mb-4">
+        <div class="col-md-3"><div class="stat-card"><i class="fas fa-hourglass-half"></i><h3 id="statTotal"><?= $stats['total_pending'] ?></h3><p>Total Pending</p></div></div>
+        <div class="col-md-3"><div class="stat-card"><i class="fas fa-calendar-day"></i><h3><?= $stats['today_pending'] ?></h3><p>Today</p></div></div>
+        <div class="col-md-3"><div class="stat-card"><i class="fas fa-calendar-week"></i><h3><?= $stats['week_pending'] ?></h3><p>This Week</p></div></div>
+        <div class="col-md-3"><div class="stat-card"><i class="fas fa-calendar-alt"></i><h3><?= $stats['month_pending'] ?></h3><p>This Month</p></div></div>
+    </div>
+
     <div class="filter-section">
         <div class="row">
-            <div class="col-md-6 mb-3 mb-md-0">
-                <input type="text" class="form-control" id="searchInput" placeholder="🔍 Search by name, service, or transaction ID...">
-            </div>
+            <div class="col-md-6 mb-3 mb-md-0"><input type="text" class="form-control" id="searchInput" placeholder="🔍 Search..."></div>
             <div class="col-md-4 mb-3 mb-md-0">
                 <select id="serviceFilter" class="form-control">
                     <option value="">All Services</option>
                     <?php foreach ($services as $srv): ?>
-                        <?php if (!empty($srv['service_name'])): ?>
-                            <option value="<?= htmlspecialchars(strtolower($srv['service_name'])) ?>"><?= htmlspecialchars($srv['service_name']) ?></option>
-                        <?php endif; ?>
+                        <option value="<?= htmlspecialchars(strtolower($srv['service_name'])) ?>"><?= htmlspecialchars($srv['service_name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" id="clearFilters"><i class="fas fa-eraser mr-1"></i> Clear</button>
-            </div>
+            <div class="col-md-2"><button class="btn btn-outline-secondary w-100" id="clearFilters"><i class="fas fa-eraser"></i> Clear</button></div>
         </div>
     </div>
 
@@ -132,27 +136,29 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
                             <td class="schedule-cell">
                                 <?php if ($app['scheduled_for']): ?>
                                     <i class="fas fa-calendar-day text-info mr-1"></i> <?= date('M j, Y', strtotime($app['scheduled_for'])) ?><br>
-                                    <small class="text-muted"><i class="fas fa-clock mr-1"></i> <?= date('g:i A', strtotime($app['scheduled_for'])) ?></small>
+                                    <small class="text-muted">
+                                        <?= ((int)date('H', strtotime($app['scheduled_for'])) < 12) ? 'Morning' : 'Afternoon' ?>
+                                    </small>
                                 <?php else: ?>
                                     <span class="text-muted">Not Scheduled</span>
                                 <?php endif; ?>
                             </td>
-                            <td>
-                                <small><?= date('M j, Y', strtotime($app['requested_at'])) ?></small><br>
-                                <small class="text-muted"><?= date('g:i A', strtotime($app['requested_at'])) ?></small>
-                            </td>
+                            <td><small><?= date('M j, Y', strtotime($app['requested_at'])) ?></small></td>
                             <td class="text-center">
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-info btn-view-details" 
-                                            title="View Details"
                                             data-details='<?= json_encode($app, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'>
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     
+                                    <?php 
+                                        $curDate = date('M j, Y', strtotime($app['scheduled_for']));
+                                        $curTime = ((int)date('H', strtotime($app['scheduled_for'])) < 12) ? ' (Morning)' : ' (Afternoon)';
+                                        $fullCurrentStr = $curDate . $curTime;
+                                    ?>
                                     <button class="btn btn-sm btn-warning btn-open-reschedule" 
-                                            title="Reschedule"
                                             data-id="<?= $app['id'] ?>"
-                                            data-current-date="<?= $app['scheduled_for'] ? date('F j, Y • g:i A', strtotime($app['scheduled_for'])) : 'Not Scheduled' ?>"
+                                            data-current-date="<?= $fullCurrentStr ?>"
                                             data-old-date-id="<?= $app['available_date_id'] ?>"
                                             data-old-time="<?= $app['scheduled_for'] ? date('H:i:s', strtotime($app['scheduled_for'])) : '' ?>">
                                         <i class="fas fa-calendar-alt"></i>
@@ -162,7 +168,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr id="no-results-row"><td colspan="6" class="text-center py-5"><div class="empty-state"><i class="fas fa-inbox"></i><p>No pending appointments</p></div></td></tr>
+                    <tr id="no-results-row"><td colspan="6" class="text-center py-5"><div class="empty-state"><p>No pending appointments</p></div></td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -223,12 +229,11 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
                     <input type="hidden" id="reschApptId" name="appointment_id">
                     <input type="hidden" id="reschOldDateId" name="old_date_id">
                     <input type="hidden" id="reschOldTime" name="old_time_slot">
-                    
                     <input type="hidden" id="reschNewDateId" name="new_date_id">
                     <input type="hidden" id="reschNewTime" name="new_time_slot">
 
                     <div class="alert alert-info mb-3">
-                        <strong>Current Schedule:</strong> <span id="reschCurrentDisplay"></span>
+                        <strong>Current:</strong> <span id="reschCurrentDisplay"></span>
                     </div>
 
                     <div id="reschLoading" class="text-center py-5">
@@ -239,8 +244,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
 
                     <div id="reschGridContainer" style="display:none;">
                         <p class="small text-muted mb-2">Select a new date and time slot:</p>
-                        <div id="sharedDatesGrid" class="dates-grid">
-                            </div>
+                        <div id="sharedDatesGrid" class="dates-grid"></div>
                     </div>
 
                     <div id="reschSummary" class="alert alert-success mt-3" style="display:none;">
@@ -250,7 +254,7 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
                     <div class="text-right mt-4">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                         <button type="submit" id="btnConfirmReschedule" class="btn btn-warning" disabled>
-                            <i class="fas fa-save mr-2"></i> Update Schedule
+                            <i class="fas fa-save mr-2"></i> Confirm Reschedule
                         </button>
                     </div>
                 </form>
@@ -276,14 +280,74 @@ $services = $serviceQuery->fetchAll(PDO::FETCH_ASSOC);
 <script>
 $(document).ready(function () {
 
-    // ==========================================
-    // 1. VIEW DETAILS LOGIC
-    // ==========================================
+    // ============================================
+    // NEW: SCROLL TO HIGHLIGHTED APPOINTMENT
+    // ============================================
+    const highlightTransactionId = sessionStorage.getItem('highlightAppointment');
+    
+    if (highlightTransactionId) {
+        console.log('Looking for transaction:', highlightTransactionId);
+        
+        // Small delay to ensure page is fully loaded
+        setTimeout(function() {
+            // Find the row containing this transaction ID
+            const targetRow = $('#appointments-tbody tr').filter(function() {
+                return $(this).find('.badge-primary').text().trim() === highlightTransactionId;
+            });
+            
+            if (targetRow.length > 0) {
+                console.log('Found appointment row, scrolling...');
+                
+                // Highlight the row with animation
+                targetRow.addClass('table-warning');
+                
+                // Scroll to the row smoothly
+                $('html, body').animate({
+                    scrollTop: targetRow.offset().top - 150 // 150px offset from top
+                }, 800, function() {
+                    // Flash effect after scrolling
+                    targetRow.addClass('table-success');
+                    setTimeout(function() {
+                        targetRow.removeClass('table-warning table-success');
+                    }, 3000);
+                });
+                
+            } else {
+                console.log('Appointment not found in current table');
+            }
+            
+            // Clear the sessionStorage after use
+            sessionStorage.removeItem('highlightAppointment');
+            
+        }, 500); // 500ms delay for page render
+    }
+
+    // ============================================
+    // Helper: Update Table & Stats
+    // ============================================
+    function removeRowAndRefresh(id) {
+        const row = $('#row_' + id);
+        // Note: For 'Manage Appointments', if you simply reschedule (not delete/complete),
+        // you might want to UPDATE the row instead of remove it.
+        // But if rescheduling might change sort order, reloading is safer.
+        // For now, we update the text to show the new date:
+        
+        // This is handled inside the AJAX success callback below.
+        
+        const totalEl = $('#statTotal');
+        let currentTotal = parseInt(totalEl.text());
+        if(!isNaN(currentTotal) && currentTotal > 0) {
+            // totalEl.text(currentTotal - 1); // Only decrease if deleting/completing
+        }
+    }
+
+    // ============================================
+    // 1. VIEW DETAILS
+    // ============================================
     $('.btn-view-details').click(function() {
         const data = $(this).data('details');
-        
         $('#viewTransId').text(data.transaction_id);
-        $('#viewName').text(data.first_name + ' ' + (data.middle_name || '') + ' ' + data.last_name);
+        $('#viewName').text(data.first_name + ' ' + data.last_name);
         $('#viewEmail').text(data.email);
         $('#viewAddress').text(data.address);
         $('#viewAgeSex').text(data.age + ' / ' + data.sex);
@@ -291,12 +355,20 @@ $(document).ready(function () {
         $('#viewPhone').text(data.phone_number); 
         $('#viewService').text(data.service_name || 'N/A');
         $('#viewReason').text(data.reason);
-        $('#viewScheduled').text(data.scheduled_for ? new Date(data.scheduled_for).toLocaleString() : 'Not Scheduled');
+        
+        let schedText = 'Not Scheduled';
+        if(data.scheduled_for) {
+            const dateObj = new Date(data.scheduled_for);
+            const dateStr = dateObj.toLocaleDateString();
+            const hour = dateObj.getHours();
+            const timeStr = hour < 12 ? 'Morning' : 'Afternoon';
+            schedText = `${dateStr} (${timeStr})`;
+        }
+        $('#viewScheduled').text(schedText);
         $('#viewIdImage').attr('src', data.id_front_image);
         
         $('.btn-complete-action').data('id', data.id);
         $('.btn-delete-action').data('id', data.id);
-        
         $('#sharedViewModal').modal('show');
     });
 
@@ -305,38 +377,30 @@ $(document).ready(function () {
         $('#fullImageModal').modal('show');
     });
 
-    // ==========================================
-    // 2. RESCHEDULE LOGIC (FIXED)
-    // ==========================================
+    // ============================================
+    // 2. RESCHEDULE LOGIC (CARD GRID)
+    // ============================================
     $('.btn-open-reschedule').click(function() {
         const btn = $(this);
         
-        // 1. RESET FORM & UI
-        $('#sharedRescheduleForm')[0].reset();
-        $('#reschLoading').hide();
-        $('#reschError').hide();
-        $('#reschGridContainer').hide();
-        $('#reschSummary').hide();
-        
-        // 2. RESET BUTTON STATE (CRITICAL FIX)
-        $('#btnConfirmReschedule')
-            .prop('disabled', true)
-            .html('<i class="fas fa-save mr-2"></i> Update Schedule'); // Reset text here
-        
-        // 3. FILL HIDDEN DATA
+        // Reset
         $('#reschApptId').val(btn.data('id'));
         $('#reschOldDateId').val(btn.data('old-date-id'));
         $('#reschOldTime').val(btn.data('old-time'));
         $('#reschCurrentDisplay').text(btn.data('current-date'));
         
-        // 4. RESET NEW VALUES
         $('#reschNewDateId').val('');
         $('#reschNewTime').val('');
         
+        $('#reschLoading').show();
+        $('#reschGridContainer').hide();
+        $('#reschError').hide();
+        $('#reschSummary').hide();
+        $('#btnConfirmReschedule').prop('disabled', true);
+        
         $('#sharedRescheduleModal').modal('show');
 
-        // 5. LOAD DATES
-        $('#reschLoading').show();
+        // Fetch Dates
         $.ajax({
             url: 'get_available_dates.php',
             type: 'POST',
@@ -352,7 +416,7 @@ $(document).ready(function () {
             },
             error: function() {
                 $('#reschLoading').hide();
-                $('#reschError').text('Error loading dates.').show();
+                $('#reschError').text('Error connecting to server.').show();
             }
         });
     });
@@ -362,8 +426,8 @@ $(document).ready(function () {
         grid.empty();
 
         dates.forEach(date => {
-            const amSlot = createSlotHtml('AM', '9:00 AM', date.am_open, date.am_remaining, '09:00:00');
-            const pmSlot = createSlotHtml('PM', '2:00 PM', date.pm_open, date.pm_remaining, '14:00:00');
+            const amSlot = createSlotHtml('AM', 'Morning', date.am_open, date.am_remaining, '09:00:00');
+            const pmSlot = createSlotHtml('PM', 'Afternoon', date.pm_open, date.pm_remaining, '14:00:00');
             const dateObj = new Date(date.date);
             const displayDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
 
@@ -377,10 +441,11 @@ $(document).ready(function () {
     }
 
     function createSlotHtml(label, timeStr, isOpen, remaining, timeValue) {
-        if(!isOpen) return `<div class="time-slot-option disabled"><span>${label} (${timeStr})</span> <span class="badge badge-secondary">Full</span></div>`;
-        return `<div class="time-slot-option clickable-slot" data-time="${timeValue}" data-label="${timeStr}"><span>${label} (${timeStr})</span> <span class="badge badge-success">${remaining} left</span></div>`;
+        if(!isOpen) return `<div class="time-slot-option disabled"><span>${timeStr}</span> <span class="badge badge-secondary">Full</span></div>`;
+        return `<div class="time-slot-option clickable-slot" data-time="${timeValue}" data-label="${timeStr}"><span>${timeStr}</span> <span class="badge badge-success">${remaining} left</span></div>`;
     }
 
+    // Handle Selection
     $(document).on('click', '.clickable-slot', function() {
         $('.clickable-slot').removeClass('selected');
         $('.date-card').removeClass('active-date');
@@ -391,21 +456,17 @@ $(document).ready(function () {
         $('#reschNewDateId').val(parentCard.data('date-id'));
         $('#reschNewTime').val($(this).data('time'));
         
-        // Update Summary
         $('#reschSummaryText').text(`${parentCard.data('date-str')} at ${$(this).data('label')}`);
         $('#reschSummary').fadeIn();
-        
-        // Enable Button
         $('#btnConfirmReschedule').prop('disabled', false);
     });
 
-    // SUBMIT HANDLER
+    // Submit
     $('#sharedRescheduleForm').on('submit', function(e) {
         e.preventDefault();
         const btn = $('#btnConfirmReschedule');
-        const originalText = '<i class="fas fa-save mr-2"></i> Update Schedule';
+        const originalText = btn.html();
         
-        // Set Loading State
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
         
         $.ajax({
@@ -416,38 +477,38 @@ $(document).ready(function () {
             success: function(res) {
                 if(res.success) {
                     $('#sharedRescheduleModal').modal('hide');
+                    btn.html(originalText);
                     
-                    // Reset Button Immediately (Fixes "Stuck" issue)
-                    btn.html(originalText); 
-                    
-                    // Dynamic Table Update
+                    // Update Row
                     const apptId = $('#reschApptId').val();
                     const row = $('#row_' + apptId);
-                    const newTime = $('#reschSummaryText').text();
+                    const newTime = $('#reschSummaryText').text(); // e.g. "Dec 25 at Morning"
                     
-                    row.find('.schedule-cell').html(`<i class="fas fa-calendar-day text-info mr-1"></i> ${newTime}`);
+                    // Format for table display
+                    const parts = newTime.split(' at ');
+                    const datePart = parts[0];
+                    const timePart = parts[1];
+                    
+                    row.find('.schedule-cell').html(`<i class="fas fa-calendar-day text-info mr-1"></i> ${datePart}<br><small class="text-muted">${timePart}</small>`);
                     row.addClass('table-success');
                     setTimeout(() => row.removeClass('table-success'), 2000);
                     
                     alert('Success! Appointment rescheduled.');
                 } else {
                     alert('Error: ' + res.message);
-                    // Reset Button on Error
                     btn.prop('disabled', false).html(originalText);
                 }
             },
-            error: function(xhr) {
-                console.error(xhr.responseText);
+            error: function() {
                 alert('System error.');
-                // Reset Button on System Error
                 btn.prop('disabled', false).html(originalText);
             }
         });
     });
 
-    // ==========================================
-    // 3. COMPLETE / DELETE ACTIONS
-    // ==========================================
+    // ============================================
+    // 3. ACTIONS (Delete/Complete)
+    // ============================================
     $(document).on('click', '.btn-complete-action, .btn-delete-action', function() {
         const id = $(this).data('id');
         const isDelete = $(this).hasClass('btn-delete-action');
@@ -456,15 +517,20 @@ $(document).ready(function () {
         
         if(confirm(msg)) {
             $.post(url, { appointment_id: id }, function(res) {
-                $(`#row_${id}`).fadeOut(400, function() { $(this).remove(); });
+                $('#row_' + id).fadeOut(400, function() { $(this).remove(); });
                 $('#sharedViewModal').modal('hide');
+                
+                // Update stats
+                const totalEl = $('#statTotal');
+                let currentTotal = parseInt(totalEl.text());
+                if(!isNaN(currentTotal) && currentTotal > 0) totalEl.text(currentTotal - 1);
             });
         }
     });
 
-    // ==========================================
-    // 4. FILTER LOGIC
-    // ==========================================
+    // ============================================
+    // 4. FILTERS
+    // ============================================
     function applyFilters() {
         const searchVal = $('#searchInput').val().toLowerCase();
         const selectedService = $('#serviceFilter').val().toLowerCase();
@@ -476,9 +542,15 @@ $(document).ready(function () {
             $(this).toggle(matchesSearch && matchesService);
         });
     }
+    
     $('#searchInput').on('input', applyFilters);
     $('#serviceFilter').on('change', applyFilters);
-    $('#clearFilters').click(function () { $('#searchInput').val(''); $('#serviceFilter').val(''); $('.appointment-row').show(); });
+    
+    $('#clearFilters').click(function () { 
+        $('#searchInput').val(''); 
+        $('#serviceFilter').val(''); 
+        $('.appointment-row').show(); 
+    });
 
 });
 </script>
