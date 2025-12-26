@@ -22,7 +22,7 @@ $query = "
     SELECT 
         a.id, a.transaction_id, a.status, a.reason, a.scheduled_for, a.requested_at, a.available_date_id,
         r.first_name, r.middle_name, r.last_name, r.address, r.birthday, r.age, r.sex, r.civil_status,
-        r.id_front_image, r.id_back_image, r.selfie_with_id_image,
+        r.id_front_image, r.selfie_with_id_image,
         au.email,
         ds.service_name
     FROM appointments a
