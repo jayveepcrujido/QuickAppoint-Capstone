@@ -80,6 +80,7 @@ foreach ($rawResults as $row) {
 
 .department-card .card-body {
     padding: 1.75rem;
+    min-height: 220px;
 }
 
 .department-card .icon-box {
@@ -125,6 +126,20 @@ foreach ($rawResults as $row) {
     line-height: 1.6;
     color: #6c757d;
     margin-bottom: 0;
+}
+
+.department-card .card-description {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.4s ease;
+    margin-bottom: 0;
+}
+
+.department-card .card:hover .card-description {
+    max-height: 100px;
+    opacity: 1;
+    margin-top: 0.75rem;
 }
 
 .department-card .btn-outline-primary {
@@ -371,13 +386,74 @@ h3.mb-4 i {
         padding: 2rem 1.5rem;
     }
 }
-</style>
+.page-header {
+            background: linear-gradient(135deg, #0D92F4, #27548A);
+            border-radius: 20px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
 
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .page-header h3 {
+            color: white;
+            font-weight: 700;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-icon {
+            background: rgba(255, 255, 255, 0.2);
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+</style>
 <div class="container">
-    <h3 class="mb-4 d-flex align-items-center">
-        <i class="bx bx-buildings text-primary mr-2"></i>
-        <span class="font-weight-bold text-dark">Departments</span>
-    </h3>
+    <div class="page-header">
+        <h3>
+            <div class="header-icon">
+                <i class="bx bx-building"></i>
+            </div>
+            <span>Select a Department</span>
+        </h3>
+        <p>Select a department to view available services and book your appointment</p>
+    </div>
     
     <!-- Search Bar -->
     <div class="input-group mb-4">
@@ -413,7 +489,7 @@ h3.mb-4 i {
                             <?= htmlspecialchars($d['name']) ?>
                         </p>
 
-                        <p class="card-text text-muted small flex-grow-1">
+                        <p class="card-text text-muted small card-description">
                             <?= htmlspecialchars($d['description']) ?>
                         </p>
 

@@ -18,6 +18,8 @@ if (!$resident) {
 }
 $residentId = $resident['id'];
 
+$highlightAppointmentId = isset($_GET['highlight']) ? (int)$_GET['highlight'] : null;
+
 // Fetch completed appointments
 $queryCompleted = "
     SELECT a.id, a.transaction_id, a.scheduled_for, a.has_sent_feedback, 
@@ -428,6 +430,22 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
                 gap: 0.5rem;
             }
         }
+        .highlight-appointment {
+            animation: highlightFade 2s ease-in-out;
+        }
+
+        @keyframes highlightFade {
+            0% {
+                background-color: #fff3cd;
+                box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+                transform: scale(1.02);
+            }
+            100% {
+                background-color: white;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body>
@@ -455,7 +473,8 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
         <?php else: ?>
             <!-- Appointment Cards -->
             <?php foreach ($completedAppointments as $index => $appt): ?>
-                <div class="appointment-card">
+                <div class="appointment-card <?php echo ($appt['id'] == $highlightAppointmentId) ? 'to-highlight' : ''; ?>" 
+                            id="appointment-<?php echo $appt['id']; ?>">
                     <div class="appointment-number"><?= $index + 1 ?></div>
 
                     <div class="card-header-section">
@@ -800,6 +819,26 @@ $completedAppointments = $stmtCompleted->fetchAll(PDO::FETCH_ASSOC);
             
             return html;
         }
+
+        $(document).ready(function() {
+            // Find the appointment to highlight
+            var $highlightedAppointment = $('.to-highlight');
+            
+            if ($highlightedAppointment.length) {
+                // Scroll to the appointment
+                setTimeout(function() {
+                    $('html, body').animate({
+                        scrollTop: $highlightedAppointment.offset().top - 100
+                    }, 500);
+                    
+                    // Add temporary highlight effect
+                    $highlightedAppointment.addClass('highlight-appointment');
+                    setTimeout(function() {
+                        $highlightedAppointment.removeClass('highlight-appointment');
+                    }, 2000);
+                }, 300);
+            }
+        });
     </script>
 </body>
 </html>

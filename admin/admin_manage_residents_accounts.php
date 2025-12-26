@@ -34,6 +34,33 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute();
 $residents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get statistics
+$totalResidents = count($residents);
+
+// New residents this month
+$stmt = $pdo->prepare("
+    SELECT COUNT(*) as count
+    FROM residents r
+    WHERE MONTH(r.created_at) = MONTH(CURRENT_DATE())
+    AND YEAR(r.created_at) = YEAR(CURRENT_DATE())
+");
+$stmt->execute();
+$newThisMonth = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+// Gender count
+$stmt = $pdo->prepare("
+    SELECT 
+        SUM(CASE WHEN sex = 'Male' THEN 1 ELSE 0 END) as male_count,
+        SUM(CASE WHEN sex = 'Female' THEN 1 ELSE 0 END) as female_count
+    FROM residents r
+    JOIN auth a ON r.auth_id = a.id
+    WHERE a.role = 'Resident'
+");
+$stmt->execute();
+$genderData = $stmt->fetch(PDO::FETCH_ASSOC);
+$maleCount = $genderData['male_count'];
+$femaleCount = $genderData['female_count'];
 ?>
 
 <!DOCTYPE html>
@@ -82,31 +109,39 @@ $residents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .stat-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 1.5rem;
             flex: 1;
             min-width: 200px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #4e73df;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            border: none;
         }
 
         .stat-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
 
         .stat-card .stat-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(78, 115, 223, 0.1);
-            border-radius: 10px;
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #4e73df;
-            font-size: 24px;
-            margin-bottom: 1rem;
+            font-size: 28px;
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+
+        .stat-card .stat-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
         }
 
         .stat-card .stat-number {
@@ -114,20 +149,14 @@ $residents = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-weight: 700;
             color: #2d3748;
             margin: 0;
+            line-height: 1;
         }
 
         .stat-card .stat-label {
             color: #718096;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             margin: 0;
-        }
-
-        .main-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            margin-bottom: 2rem;
+            font-weight: 500;
         }
 
         .card-header-custom {
@@ -444,16 +473,38 @@ $residents = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <p>View and manage all registered resident accounts in the system</p>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="stats-container">
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class='bx bx-user'></i>
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(13, 148, 244, 1); background: linear-gradient(135deg, #0D92F4, #27548A);">
+                    <i class='bx bx-user' style="color:white;"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number"><?= $totalResidents ?></h3>
+                    <p class="stat-label">Total Residents</p>
+                </div>
             </div>
-            <h3 class="stat-number"><?= count($residents) ?></h3>
-            <p class="stat-label">Total Residents</p>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); background: linear-gradient(135deg, #0df44bff, #408a27ff);">
+                    <i class='bx bx-user-plus'style="color:white;"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number"><?= $newThisMonth ?></h3>
+                    <p class="stat-label">New This Month</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); background: linear-gradient(135deg, #ca0df4ff, #7e278aff);">
+                    <i class='bx bx-male-sign'style="color:white;"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number"><?= $maleCount ?> / <?= $femaleCount ?></h3>
+                    <p class="stat-label">Male / Female</p>
+                </div>
+            </div>
         </div>
-    </div>
 
     <!-- Search Box -->
     <div class="search-container">

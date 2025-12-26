@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     body {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+        background: linear-gradient(135deg, #1b2d69ff 0%, #0D92F4, #27548A 100%);
         min-height: 100vh;
         padding: 2rem 0;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .lgu-name {
         font-size: 1.5rem;
         font-weight: 700;
-        color: var(--primary-blue);
+        color: #27548A;
         margin: 0.5rem 0;
     }
 
@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .appointment-info {
-        background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+        background: linear-gradient(135deg, #0D92F4, #27548A);
         padding: 1.5rem;
         border-radius: 16px;
         color: white;

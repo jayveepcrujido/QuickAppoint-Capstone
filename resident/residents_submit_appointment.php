@@ -173,6 +173,56 @@ try {
     // ✅ Commit transaction
     $pdo->commit();
 
+    // ==================== EMAIL NOTIFICATION ====================
+    // After successful booking, send confirmation email to resident
+    try {
+        // Get resident email
+        $emailQuery = "SELECT email FROM auth WHERE id = ?";
+        $emailStmt = $pdo->prepare($emailQuery);
+        $emailStmt->execute([$auth_id]);
+        $authData = $emailStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($authData && $authData['email']) {
+            // Get department name
+            $deptQuery = "SELECT name FROM departments WHERE id = ?";
+            $deptStmt = $pdo->prepare($deptQuery);
+            $deptStmt->execute([$department_id]);
+            $deptData = $deptStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get service name
+            $serviceQuery = "SELECT service_name FROM department_services WHERE id = ?";
+            $serviceStmt = $pdo->prepare($serviceQuery);
+            $serviceStmt->execute([$service_id]);
+            $serviceData = $serviceStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get service requirements
+            $reqQuery = "SELECT requirement FROM service_requirements WHERE service_id = ?";
+            $reqStmt = $pdo->prepare($reqQuery);
+            $reqStmt->execute([$service_id]);
+            $requirements = $reqStmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Format appointment details
+            $timeSlot = ($slot_period === 'am') ? '9:00 AM - 12:00 PM' : '2:00 PM - 5:00 PM';
+            
+            $appointmentDetails = [
+                'service_name' => $serviceData['service_name'] ?? 'N/A',
+                'date' => $formatted_date,
+                'time' => $timeSlot,
+                'department_name' => $deptData['name'] ?? 'N/A',
+                'transaction_id' => $transactionId,
+                'requirements' => $requirements
+            ];
+            
+            // Send email
+            require_once '../send_reset_email.php';
+            sendAppointmentConfirmation($authData['email'], $resident_name, $appointmentDetails);
+        }
+    } catch (Exception $emailError) {
+        // Log email error but don't fail the appointment
+        error_log("Email notification error: " . $emailError->getMessage());
+    }
+    // ==================== END EMAIL NOTIFICATION ====================
+
     echo json_encode([
         'status' => 'success',
         'appointment_id' => $appointmentId,

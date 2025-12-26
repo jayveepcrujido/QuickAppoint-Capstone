@@ -712,7 +712,9 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Resident') {
 
     <!-- Sidebar -->
     <div class="l-navbar" id="nav-bar">
-        <img src="../assets/images/Unisan_logo.png" id="sidebar-logo" alt="Sidebar Logo" class="header_img">
+        <a href="residents_dashboard.php" style="display: block; cursor: pointer;">
+            <img src="../assets/images/Unisan_logo.png" id="sidebar-logo" alt="Sidebar Logo" class="header_img" style="cursor: pointer;">
+        </a>
         <h4 style="text-align: center; color: white;">Residents Menu</h4>
         <nav class="nav">
             <a href="javascript:void(0);" class="nav_link" onclick="toggleDropdown('appointmentDropdown')">

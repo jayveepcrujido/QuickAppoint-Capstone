@@ -529,10 +529,14 @@ if ($user_department_id) {
     background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
     border-left: 4px solid var(--primary-color);
     border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
     transition: all 0.3s ease;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .task-item:hover {
@@ -548,6 +552,57 @@ if ($user_department_id) {
     border-left-color: var(--warning-color);
 }
 
+.task-main-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.task-name {
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 0.95rem;
+}
+
+.task-service-compact {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.task-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #0D92F4, #27548A);
+    color: white;
+    padding: 0.25rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.task-status-badge {
+    padding: 0.25rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .task-main-info {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .task-service-compact {
+        flex-basis: 100%;
+        font-size: 0.8rem;
+    }
+}
+
 .task-time {
     display: inline-flex;
     align-items: center;
@@ -561,7 +616,7 @@ if ($user_department_id) {
 }
 
 .task-info {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 .task-info h6 {
@@ -1043,10 +1098,9 @@ window.cleanupAllPages = function() {
         // Check for notifications on page load
         $(document).ready(function() {
             checkNewNotifications();
-            
-            // Check every 30 seconds for new notifications
             setInterval(checkNewNotifications, 30000);
         });
+
         function toggleTasksSection() {
             const content = $('#tasks-collapsible-content');
             const icon = $('#tasks-toggle-icon');
@@ -1060,6 +1114,40 @@ window.cleanupAllPages = function() {
                 }
             });
         }
+        $(document).ready(function() {
+            console.log('✓ Dashboard content loaded and initialized');
+            
+            // Handle task card clicks using event delegation
+            $(document).on('click', '.task-item', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const transactionId = $(this).data('transaction-id');
+                console.log('✓ Task card clicked, Transaction ID:', transactionId);
+                
+                if (transactionId) {
+                    // Store the transaction ID in sessionStorage
+                    sessionStorage.setItem('highlightAppointment', transactionId);
+                    console.log('✓ Stored in sessionStorage:', transactionId);
+                    
+                    // Load the appointments page
+                    if (typeof loadContent === 'function') {
+                        loadContent('personnel_manage_appointments.php');
+                    } else {
+                        console.error('❌ loadContent function not available');
+                        window.location.href = 'personnel_manage_appointments.php';
+                    }
+                } else {
+                    console.error('❌ No transaction ID found on clicked element');
+                }
+            });
+            
+            // Check for notifications
+            if (typeof checkNewNotifications === 'function') {
+                checkNewNotifications();
+                setInterval(checkNewNotifications, 30000);
+            }
+        });
     </script>
 
 </head>
@@ -1097,10 +1185,6 @@ window.cleanupAllPages = function() {
                             <div class="stat-label">Scheduled Today</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-number"><?php echo $pending_count; ?></div>
-                            <div class="stat-label">Pending Review</div>
-                        </div>
-                        <div class="stat-card">
                             <div class="stat-number"><?php echo $completed_today; ?></div>
                             <div class="stat-label">Completed Today</div>
                         </div>
@@ -1112,27 +1196,23 @@ window.cleanupAllPages = function() {
                     <?php if (!empty($today_tasks)): ?>
                         <?php foreach ($today_tasks as $task): ?>
                             <div class="task-item status-<?php echo strtolower($task['status']); ?>" 
-                                onclick="loadContent('personnel_manage_appointments.php');">
-                                <div class="d-flex justify-content-between align-items-start">
+                                data-transaction-id="<?php echo $task['transaction_id']; ?>">
+                                <div class="task-main-info">
                                     <span class="task-time">
                                         <i class='bx bx-time-five'></i>
-                                        <?php echo date('g:i A', strtotime($task['appointment_time'])); ?>
+                                        <?php 
+                                            $hour = (int)date('G', strtotime($task['appointment_time']));
+                                            echo ($hour < 12) ? 'Morning' : 'Afternoon';
+                                        ?>
                                     </span>
-                                    <span class="task-status-badge <?php echo strtolower($task['status']); ?>">
-                                        <?php echo $task['status']; ?>
+                                    <span class="task-name"><?php echo htmlspecialchars($task['resident_name']); ?></span>
+                                    <span class="task-service-compact">
+                                        <?php echo htmlspecialchars($task['service_name'] ?? 'General'); ?>
                                     </span>
                                 </div>
-                                <div class="task-info">
-                                    <h6><?php echo htmlspecialchars($task['resident_name']); ?></h6>
-                                    <p>
-                                        <i class='bx bx-briefcase'></i>
-                                        <?php echo htmlspecialchars($task['service_name'] ?? 'General Service'); ?>
-                                    </p>
-                                    <small class="text-muted">
-                                        <i class='bx bx-hash'></i>
-                                        <?php echo htmlspecialchars($task['transaction_id']); ?>
-                                    </small>
-                                </div>
+                                <span class="task-status-badge <?php echo strtolower($task['status']); ?>">
+                                    <?php echo $task['status']; ?>
+                                </span>
                             </div>
                         <?php endforeach; ?>
                         

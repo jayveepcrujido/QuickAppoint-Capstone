@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $update->execute(['token' => $token, 'email' => $email]);
 
         // Create reset link
-        $resetLink = "http://localhost/capstonev2/reset_password.php?token=$token";
+        $resetLink = "http://localhost/capstone-2/capstone/reset_password.php?token=$token";
 
         // Send email using PHPMailer
         $result = sendResetEmail($email, $email, $resetLink); // Using email as name since we don't have first_name
@@ -54,12 +54,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(to right, #0d94f4bc, #27548ac3);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('assets/images/LGU_Unisan.jpg') no-repeat center center/cover;
+            opacity: 0.1;
+            z-index: -1;
         }
 
         .container {
@@ -108,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         button {
             width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(to right, #0D92F4, #27548A);
             color: white;
             border: none;
             padding: 14px;
@@ -122,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(to right, #27548A, #0D92F4);
         }
 
         button:active {

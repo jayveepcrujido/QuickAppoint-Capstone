@@ -671,6 +671,90 @@ if ($user_department_id) {
         body > .flatpickr-calendar:not(.open) {
             display: none !important;
         }
+        .task-main-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.task-name {
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 0.95rem;
+}
+
+.task-service-compact {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.task-item {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.task-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #0D92F4, #27548A);
+    color: white;
+    padding: 0.25rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.task-status-badge {
+    padding: 0.25rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .task-main-info {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .task-service-compact {
+        flex-basis: 100%;
+        font-size: 0.8rem;
+    }
+}
+.nav_submenu {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0;
+}
+
+.nav_sublink {
+    padding: 0.6rem 1rem 0.6rem 3rem !important;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.nav_sublink:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    padding-left: 3.2rem !important;
+}
+
+.nav_sublink i {
+    font-size: 1rem;
+    margin-right: 0.5rem;
+}
     </style>
 
 <script>
@@ -854,6 +938,30 @@ if (window.feedbackPageCleanup && typeof window.feedbackPageCleanup === 'functio
         console.error('Error in feedbackPageCleanup:', e);
     }
 }
+// ADD THIS NEW CLEANUP
+if (window.feedbackPageCleanup && typeof window.feedbackPageCleanup === 'function') {
+    console.log('Running feedbackPageCleanup...');
+    try {
+        window.feedbackPageCleanup();
+    } catch(e) {
+        console.error('Error in feedbackPageCleanup:', e);
+    }
+}
+
+// *** ADD ANALYTICS CLEANUP ***
+if (window.dashboardCharts) {
+    console.log('Cleaning up dashboard charts...');
+    try {
+        Object.values(window.dashboardCharts).forEach(function(chart) {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
+        window.dashboardCharts = null;
+    } catch(e) {
+        console.error('Error cleaning up dashboard charts:', e);
+    }
+}
 
         // Store the currently loaded page
         let currentPage = null;
@@ -1034,6 +1142,51 @@ function loadContent(page) {
                             }
                         }, 300);
                     }
+                    // Initialize feedback page if it's loaded
+                    if (page.includes('personnel_view_feedbacks.php')) {
+                        console.log('📋 Initializing feedback page...');
+                        if (typeof window.initFeedbackPage === 'function') {
+                            window.initFeedbackPage();
+                        }
+                    }
+
+                    // *** ADD THIS NEW SECTION FOR ANALYTICS ***
+                    if (page.includes('personnel_analytics.php') || page.includes('analytics.php')) {
+                        console.log('📊 Initializing analytics page...');
+                        
+                        setTimeout(function() {
+                            console.log('Attempting to initialize charts and clock...');
+                            
+                            if (typeof window.initDashboardCharts === 'function') {
+                                console.log('✓ Initializing dashboard charts');
+                                window.initDashboardCharts();
+                            }
+                            
+                            if (typeof window.startAnalyticsClock === 'function') {
+                                console.log('✓ Starting analytics clock');
+                                window.startAnalyticsClock();
+                            }
+                            
+                            // Fallback retry
+                            if (!window.initDashboardCharts || !window.startAnalyticsClock) {
+                                console.warn('⚠️ Some functions not found, retrying in 500ms...');
+                                setTimeout(function() {
+                                    if (typeof window.initDashboardCharts === 'function') {
+                                        window.initDashboardCharts();
+                                    }
+                                    if (typeof window.startAnalyticsClock === 'function') {
+                                        window.startAnalyticsClock();
+                                    }
+                                }, 500);
+                            }
+                        }, 300);
+                    }
+
+                    // Special handling for create_available_dates page
+                    if (page.includes('create_available_dates.php')) {
+                        console.log('📅 Verifying calendar initialization...');
+                        // ... existing calendar code ...
+                    }
                 }, 200);
             }
         });
@@ -1043,7 +1196,19 @@ function loadContent(page) {
 }
 
         function toggleDropdown(id) {
-            $("#" + id).slideToggle("fast");
+            const menu = $("#" + id);
+            const parentLink = menu.prev('.nav_link');
+            const chevron = parentLink.find('.bx-chevron-down');
+            
+            menu.slideToggle("fast", function() {
+                if (menu.is(':visible')) {
+                    chevron.css('transform', 'rotate(180deg)');
+                    parentLink.addClass('active');
+                } else {
+                    chevron.css('transform', 'rotate(0deg)');
+                    parentLink.removeClass('active');
+                }
+            });
         }
 
         function toggleProfileMenu() {
@@ -1131,6 +1296,22 @@ function loadContent(page) {
                 }
             });
         }
+        $(document).ready(function() {
+            checkNewNotifications();
+            setInterval(checkNewNotifications, 30000);
+            
+            // Handle task card clicks using event delegation
+            $(document).on('click', '.task-item', function() {
+                const transactionId = $(this).data('transaction-id');
+                console.log('Task clicked:', transactionId);
+                
+                // Store the transaction ID in sessionStorage
+                sessionStorage.setItem('highlightAppointment', transactionId);
+                
+                // Load the appointments page
+                loadContent('personnel_manage_appointments.php');
+            });
+        });
     </script>
 
 </head>
@@ -1179,7 +1360,7 @@ function loadContent(page) {
         </a>
         <h4 style="text-align: center; color: white;">Personnel Menu</h4>
         <nav class="nav">
-            <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_dashboard_content.php');">
+            <a href="personnel_dashboard.php" class="nav_link"">
                 <i class='bx bx-home-alt'></i> <span>Dashboard</span>
             </a>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_analytics.php');">
@@ -1188,9 +1369,19 @@ function loadContent(page) {
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_GeoMap.php');">
                 <i class='bx bx-location-pin'></i> <span>Appointments GeoMap</span>
             </a>
-            <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_manage_appointments.php');">
-                <i class='bx bx-calendar'></i> <span>Manage Appointments</span>
+            <a href="javascript:void(0);" class="nav_link" onclick="toggleDropdown('manageAppointmentsMenu')">
+                <i class='bx bx-calendar'></i> 
+                <span>Manage Appointments</span>
+                <i class='bx bx-chevron-down' style="margin-left: auto; transition: transform 0.3s;"></i>
             </a>
+            <div id="manageAppointmentsMenu" class="nav_submenu" style="display: none;">
+                <a href="javascript:void(0);" class="nav_link nav_sublink" onclick="return loadContent('personnel_manage_appointments.php');">
+                    <i class='bx bx-time'></i> <span>Incoming Appointments</span>
+                </a>
+                <a href="javascript:void(0);" class="nav_link nav_sublink" onclick="return loadContent('personnel_noshow_appointments.php');">
+                    <i class='bx bx-user-x'></i> <span>No-Show Appointments</span>
+                </a>
+            </div>
             <a href="javascript:void(0);" class="nav_link" onclick="return loadContent('personnel_view_appointments_status.php');">
                 <i class='bx bx-calendar-check'></i> <span>All Appointments</span>
             </a>
@@ -1245,10 +1436,6 @@ function loadContent(page) {
                             <div class="stat-label">Scheduled Today</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-number"><?php echo $pending_count; ?></div>
-                            <div class="stat-label">Pending Review</div>
-                        </div>
-                        <div class="stat-card">
                             <div class="stat-number"><?php echo $completed_today; ?></div>
                             <div class="stat-label">Completed Today</div>
                         </div>
@@ -1260,27 +1447,23 @@ function loadContent(page) {
                     <?php if (!empty($today_tasks)): ?>
                         <?php foreach ($today_tasks as $task): ?>
                             <div class="task-item status-<?php echo strtolower($task['status']); ?>" 
-                                onclick="loadContent('personnel_manage_appointments.php');">
-                                <div class="d-flex justify-content-between align-items-start">
+                                data-transaction-id="<?php echo $task['transaction_id']; ?>">
+                                <div class="task-main-info">
                                     <span class="task-time">
                                         <i class='bx bx-time-five'></i>
-                                        <?php echo date('g:i A', strtotime($task['appointment_time'])); ?>
+                                        <?php 
+                                            $hour = (int)date('G', strtotime($task['appointment_time']));
+                                            echo ($hour < 12) ? 'Morning' : 'Afternoon';
+                                        ?>
                                     </span>
-                                    <span class="task-status-badge <?php echo strtolower($task['status']); ?>">
-                                        <?php echo $task['status']; ?>
+                                    <span class="task-name"><?php echo htmlspecialchars($task['resident_name']); ?></span>
+                                    <span class="task-service-compact">
+                                        <?php echo htmlspecialchars($task['service_name'] ?? 'General'); ?>
                                     </span>
                                 </div>
-                                <div class="task-info">
-                                    <h6><?php echo htmlspecialchars($task['resident_name']); ?></h6>
-                                    <p>
-                                        <i class='bx bx-briefcase'></i>
-                                        <?php echo htmlspecialchars($task['service_name'] ?? 'General Service'); ?>
-                                    </p>
-                                    <small class="text-muted">
-                                        <i class='bx bx-hash'></i>
-                                        <?php echo htmlspecialchars($task['transaction_id']); ?>
-                                    </small>
-                                </div>
+                                <span class="task-status-badge <?php echo strtolower($task['status']); ?>">
+                                    <?php echo $task['status']; ?>
+                                </span>
                             </div>
                         <?php endforeach; ?>
                         

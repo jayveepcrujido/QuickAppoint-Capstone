@@ -91,10 +91,12 @@ try {
     .notification-card {
         transition: all 0.3s ease;
         border-left: 4px solid transparent;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         cursor: pointer;
     }
-    
+    .notification-card .card-body {
+        padding: 12px 15px;
+    }
     .notification-card:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         transform: translateY(-2px);
@@ -268,8 +270,8 @@ try {
                 ?>
                 
                 <div class="card notification-card <?php echo $notification['is_read'] ? 'read' : 'unread'; ?>" 
-                     data-type="<?php echo $notificationType; ?>"
-                     onclick="viewAppointment(<?php echo $notification['appointment_id']; ?>)">
+                    data-type="<?php echo $notificationType; ?>"
+                    onclick="viewAppointment(<?php echo $notification['appointment_id']; ?>, '<?php echo $notificationType; ?>')">
                     <div class="card-body">
                         <div class="d-flex">
                             <div class="notification-icon <?php echo $iconClass; ?> mr-3">
@@ -288,7 +290,16 @@ try {
                                     </span>
                                 </div>
                                 
-                                <p class="mb-2"><?php echo htmlspecialchars($notification['message']); ?></p>
+                                <p class="mb-2">
+                                    <?php if ($notification['appointment_status'] === 'Completed'): ?>
+                                        Your appointment for 
+                                        <strong><?php echo htmlspecialchars($notification['service_name'] ?: $departmentDisplay); ?></strong>
+                                        has been completed.
+                                    <?php else: ?>
+                                        You have an appointment for 
+                                        <strong><?php echo htmlspecialchars($notification['service_name'] ?: $departmentDisplay); ?></strong>
+                                    <?php endif; ?>
+                                </p>
                                 
                                 <div class="d-flex align-items-center flex-wrap gap-2">
                                     <?php if ($notification['transaction_id']): ?>
@@ -319,13 +330,6 @@ try {
                                     </span>
                                     <?php endif; ?>
                                     
-                                    <?php if ($notification['personnel_name']): ?>
-                                    <span class="badge badge-secondary mr-2 mb-1">
-                                        <i class='bx bx-user'></i> 
-                                        <?php echo htmlspecialchars($notification['personnel_name']); ?>
-                                    </span>
-                                    <?php endif; ?>
-                                    
                                     <?php
                                     $statusClass = 'secondary';
                                     $statusText = $notification['appointment_status'];
@@ -338,17 +342,6 @@ try {
                                     <span class="badge badge-<?php echo $statusClass; ?> mb-1">
                                         <?php echo ucfirst($statusText); ?>
                                     </span>
-                                </div>
-                                
-                                <div class="mt-3 d-flex gap-2 flex-wrap">
-                                    <button class="btn btn-sm btn-primary" 
-                                            onclick="event.stopPropagation(); viewAppointment(<?php echo $notification['appointment_id']; ?>)">
-                                        <i class='bx bx-show'></i> View Details
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="event.stopPropagation(); deleteNotification(<?php echo $notification['id']; ?>, this)">
-                                        <i class='bx bx-trash'></i> Delete
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -385,9 +378,16 @@ try {
     });
     
     // View appointment details
-    function viewAppointment(appointmentId) {
-        // Load the resident's appointment view page
-        loadContent('residents_view_appointments.php?id=' + appointmentId);
+    function viewAppointment(appointmentId, status) {
+        // Redirect based on appointment status with appointment ID as parameter
+        if (status === 'completed') {
+            loadContent('residents_completed_appointments.php?highlight=' + appointmentId);
+        } else if (status === 'pending') {
+            loadContent('residents_pending_appointments.php?highlight=' + appointmentId);
+        } else {
+            // Default fallback
+            loadContent('residents_view_appointments.php?id=' + appointmentId);
+        }
     }
     
     // Delete single notification

@@ -20,243 +20,261 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
     
     <style>
         /* Enhanced Dashboard Styles */
-        .welcome-banner {
-            background: linear-gradient(135deg, #0D92F4, #27548A);
-            border-radius: 15px;
-            padding: 2rem;
-            color: white;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .welcome-banner::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-        }
-        
-        .welcome-banner h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .welcome-banner p {
-            font-size: 1.1rem;
-            opacity: 0.95;
-            margin-bottom: 0;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .dashboard-card {
-            border: none;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            height: 100%;
-            background: white;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        }
-        
-        .dashboard-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: currentColor;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .dashboard-card:hover::before {
-            opacity: 1;
-        }
-        
-        .card-icon-wrapper {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .dashboard-card:hover .card-icon-wrapper {
-            transform: scale(1.1) rotate(5deg);
-        }
-        
-        .card-icon-wrapper i {
-            font-size: 28px;
-        }
-        
-        .card-content h5 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.3rem;
-            color: #2d3748;
-        }
-        
-        .card-content small {
-            color: #718096;
-            font-size: 0.875rem;
-        }
-        
-        /* Color themes for cards */
-        .card-primary { color: #667eea; }
-        .card-primary .card-icon-wrapper { background: rgba(102, 126, 234, 0.1); }
-        
-        .card-success { color: #48bb78; }
-        .card-success .card-icon-wrapper { background: rgba(72, 187, 120, 0.1); }
-        
-        .card-warning { color: #f6ad55; }
-        .card-warning .card-icon-wrapper { background: rgba(246, 173, 85, 0.1); }
-        
-        .card-danger { color: #fc8181; }
-        .card-danger .card-icon-wrapper { background: rgba(252, 129, 129, 0.1); }
-        
-        .card-info { color: #4299e1; }
-        .card-info .card-icon-wrapper { background: rgba(66, 153, 225, 0.1); }
-        
-        .card-secondary { color: #a0aec0; }
-        .card-secondary .card-icon-wrapper { background: rgba(160, 174, 192, 0.1); }
-        
-        .card-dark { color: #2d3748; }
-        .card-dark .card-icon-wrapper { background: rgba(45, 55, 72, 0.1); }
-        
-        /* Stats overview */
-        .stats-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .stats-card:hover {
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 1.5rem;
-            position: relative;
-            padding-bottom: 0.5rem;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 50px;
-            height: 3px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 2px;
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .welcome-banner {
-                padding: 1.5rem;
-            }
-            
-            .welcome-banner h2 {
-                font-size: 1.5rem;
-            }
-            
-            .welcome-banner p {
-                font-size: 1rem;
-            }
-            
-            .card-icon-wrapper {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .card-icon-wrapper i {
-                font-size: 24px;
-            }
-            
-            .card-content h5 {
-                font-size: 1rem;
-            }
-            
-            .section-title {
-                font-size: 1.25rem;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .dashboard-card {
-                margin-bottom: 1rem;
-            }
-            
-            .card-icon-wrapper {
-                margin-bottom: 0.5rem;
-            }
-            
-            .dashboard-card .d-flex {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .dashboard-card .d-flex.align-items-center {
-                align-items: center !important;
-            }
-        }
-        
-        /* Loading animation */
-        .content-area {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        /* Prevent Flatpickr calendars from lingering */
-        .flatpickr-calendar {
-            z-index: 9999 !important;
-        }
+body {
+    background: #f8f9fa;
+}
 
-        /* Hide any orphaned Flatpickr calendars that aren't open */
-        body > .flatpickr-calendar:not(.open) {
-            display: none !important;
-        }
+.content-area {
+    padding-top: 20px;
+    animation: fadeIn 0.5s ease-in;
+}
 
-        /* Extra safety: hide all Flatpickr calendars by default */
-        .flatpickr-calendar:not(.open):not(.inline) {
-            display: none !important;
-            visibility: hidden !important;
-        }
+.welcome-banner {
+    background: linear-gradient(135deg, #0D92F4 0%, #27548A 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.welcome-banner h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.welcome-banner p {
+    font-size: 1.1rem;
+    opacity: 0.95;
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-card {
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    height: 100%;
+    background: white;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.dashboard-card:hover::before {
+    opacity: 1;
+}
+
+.card-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover .card-icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.card-icon-wrapper i {
+    font-size: 26px;
+}
+
+.card-content h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: #2d3748;
+}
+
+.card-content small {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+/* Color themes for cards */
+.card-primary { color: #667eea; }
+.card-primary .card-icon-wrapper { background: rgba(102, 126, 234, 0.1); }
+
+.card-success { color: #48bb78; }
+.card-success .card-icon-wrapper { background: rgba(72, 187, 120, 0.1); }
+
+.card-warning { color: #f6ad55; }
+.card-warning .card-icon-wrapper { background: rgba(246, 173, 85, 0.1); }
+
+.card-danger { color: #fc8181; }
+.card-danger .card-icon-wrapper { background: rgba(252, 129, 129, 0.1); }
+
+.card-info { color: #4299e1; }
+.card-info .card-icon-wrapper { background: rgba(66, 153, 225, 0.1); }
+
+.card-secondary { color: #a0aec0; }
+.card-secondary .card-icon-wrapper { background: rgba(160, 174, 192, 0.1); }
+
+.card-dark { color: #2d3748; }
+.card-dark .card-icon-wrapper { background: rgba(45, 55, 72, 0.1); }
+
+/* Stats overview */
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-top: 2rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+}
+
+/* Dropdown improvements */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+}
+
+/* Loading state */
+.spinner-border {
+    border-width: 3px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .welcome-banner {
+        padding: 1.5rem;
+    }
+    
+    .welcome-banner h2 {
+        font-size: 1.5rem;
+    }
+    
+    .welcome-banner p {
+        font-size: 1rem;
+    }
+    
+    .card-icon-wrapper {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .card-icon-wrapper i {
+        font-size: 24px;
+    }
+    
+    .card-content h5 {
+        font-size: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-icon-wrapper {
+        margin-bottom: 0.5rem;
+    }
+    
+    .dashboard-card .d-flex {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .dashboard-card .d-flex.align-items-center {
+        align-items: center !important;
+    }
+}
+
+/* Loading animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Prevent Flatpickr calendars from lingering */
+.flatpickr-calendar {
+    z-index: 9999 !important;
+}
+
+body > .flatpickr-calendar:not(.open) {
+    display: none !important;
+}
+
+.flatpickr-calendar:not(.open):not(.inline) {
+    display: none !important;
+    visibility: hidden !important;
+}
     </style>
 
 <script>
@@ -656,8 +674,11 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
         </a>
         <h4 style="text-align: center; color: white;">Admin Menu</h4>
         <nav class="nav">
-            <a href="#" class="nav_link" onclick="loadContent('admin_analytics.php')">
+            <a href="admin_dashboard.php" class="nav_link">
                 <i class='bx bx-home-alt'></i> <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav_link" onclick="loadContent('admin_analytics.php')">
+                <i class='bx bx-dashboard'></i> <span>Analytics</span>
             </a>
             <a href="#" class="nav_link" onclick="loadContent('admin_GeoMap.php')">
                 <i class='bx bx-location-pin'></i> <span>Appointments GeoMap</span>
@@ -705,16 +726,32 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
             <!-- Quick Actions Section -->
             <h3 class="section-title">Quick Actions</h3>
             <div class="row">
-                <div class="col-12 mb-3">
+                <div class="col-12 col-md-6 mb-3">
                     <a href="#" class="text-decoration-none" onclick="loadContent('admin_analytics.php')">
-                        <div class="dashboard-card card-dark p-3 p-md-4">
+                        <div class="dashboard-card analytics-card p-3 p-md-4">
                             <div class="d-flex align-items-center">
                                 <div class="card-icon-wrapper">
-                                    <i class='bx bx-grid-alt'></i>
+                                    <i class='bx bx-dashboard'></i>
                                 </div>
                                 <div class="card-content">
                                     <h5>Analytics Dashboard</h5>
                                     <small>View comprehensive system analytics and insights</small>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="col-12 col-md-6 mb-3">
+                    <a href="#" class="text-decoration-none" onclick="loadContent('admin_GeoMap.php')">
+                        <div class="dashboard-card card-info p-3 p-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="card-icon-wrapper">
+                                    <i class='bx bx-map'></i>
+                                </div>
+                                <div class="card-content">
+                                    <h5>Appointments GeoMap</h5>
+                                    <small>View appointment locations on interactive map</small>
                                 </div>
                             </div>
                         </div>
@@ -798,7 +835,7 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
                         <div class="dashboard-card card-warning p-3 p-md-4">
                             <div class="d-flex align-items-center">
                                 <div class="card-icon-wrapper">
-                                    <i class='bx bx-message-rounded-dots'></i>
+                                    <i class='bx bx-message'></i>
                                 </div>
                                 <div class="card-content">
                                     <h5>Feedback Center</h5>
@@ -817,7 +854,7 @@ if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'Admin') {
                     <div class="dashboard-card card-secondary p-3 p-md-4" data-toggle="modal" data-target="#logoutModal" style="cursor:pointer;">
                         <div class="d-flex align-items-center">
                             <div class="card-icon-wrapper">
-                                <i class='bx bx-log-out'></i>
+                                <i class='bx bx-arrow-out-right-circle-half'></i>
                             </div>
                             <div class="card-content">
                                 <h5>Logout</h5>

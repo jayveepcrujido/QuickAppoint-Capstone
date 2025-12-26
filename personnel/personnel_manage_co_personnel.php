@@ -653,6 +653,10 @@ function deletePersonnel() {
         success: function(response) {
             if (response.success) {
                 showAlert(response.message, 'success');
+                
+                // FIXED: Reset button state before hiding modal
+                deleteBtn.prop('disabled', false).html(originalBtnText);
+                
                 $('#deleteConfirmModal').modal('hide');
                 
                 // Dynamically refresh the page content

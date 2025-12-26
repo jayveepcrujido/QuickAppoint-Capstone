@@ -52,385 +52,864 @@ $totalAppointments = array_sum(array_column($appointmentLocations, 'count'));
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 
 <style>
-    /* Stats Cards */
+/* Stats Cards */
+.geomap-stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.geomap-stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: transform 0.3s ease;
+}
+
+.geomap-stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.geomap-stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.geomap-stat-icon.blue { background: linear-gradient(135deg, #36d1dc, #5b86e5); }
+.geomap-stat-icon.purple { background: linear-gradient(135deg, #6a11cb, #2575fc); }
+.geomap-stat-icon.green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+
+.geomap-stat-info h3 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+}
+
+.geomap-stat-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* Map Container */
+.geomap-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.geomap-header {
+    background: linear-gradient(135deg, #0D92F4, #27548A);
+    padding: 20px 25px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.geomap-header-left h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.geomap-header-left p {
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.geomap-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.geomap-filter-select-header {
+    padding: 10px 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    background: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.geomap-filter-select-header option {
+    color: #333;
+    background: white;
+}
+
+.geomap-filter-select-header:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.geomap-filter-select-header:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.25);
+    border-color: white;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.geomap-export-btn {
+    background: white;
+    color: #084672ff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.geomap-export-btn:hover {
+    background: #f0f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.geomap-export-btn:active {
+    transform: translateY(0);
+}
+
+.geomap-export-btn i {
+    font-size: 18px;
+}
+
+#geomap-map {
+    height: 600px;
+    width: 100%;
+    touch-action: pan-x pan-y;
+}
+
+/* Legend */
+.geomap-legend {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    line-height: 20px;
+}
+
+.geomap-legend h6 {
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    color: #333;
+    font-size: 14px;
+}
+
+.geomap-legend-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.geomap-legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 8px;
+    border: 2px solid rgba(0,0,0,0.2);
+}
+
+/* Popup */
+.geomap-popup-content {
+    font-family: "Segoe UI", sans-serif;
+}
+
+.geomap-popup-content h6 {
+    margin: 0 0 8px 0;
+    color: #0D92F4;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.geomap-popup-content p {
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+.geomap-popup-content strong {
+    color: #333;
+}
+
+.approximate-location {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+/* Layer Control Styles */
+.leaflet-control-layers {
+    border-radius: 8px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important;
+    border: none !important;
+}
+
+.leaflet-control-layers-toggle {
+    background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"%3e%3cpath fill="%230D92F4" d="m21.484 7.125l-9.022-5a1.003 1.003 0 0 0-.968 0l-8.978 4.96a1 1 0 0 0-.003 1.748l9.022 5.04a.995.995 0 0 0 .973.001l8.978-5a1 1 0 0 0-.002-1.749zm-9.461 4.73l-6.964-3.89L12 4.98l6.964 3.99l-6.941 3.885z"/%3e%3cpath fill="%230D92F4" d="M12 15.856l-8.515-4.73l-.971 1.748l9 5a1 1 0 0 0 .971 0l9-5l-.971-1.748L12 15.856z"/%3e%3cpath fill="%230D92F4" d="M12 19.856l-8.515-4.73l-.971 1.748l9 5a1 1 0 0 0 .971 0l9-5l-.971-1.748L12 19.856z"/%3e%3c/svg%3e') !important;
+    width: 44px !important;
+    height: 44px !important;
+    background-size: 24px 24px !important;
+    background-position: center !important;
+}
+
+.leaflet-control-layers-expanded {
+    padding: 10px !important;
+    font-family: "Segoe UI", sans-serif !important;
+}
+
+.leaflet-control-layers-base label,
+.leaflet-control-layers-overlays label {
+    font-size: 13px !important;
+    color: #333 !important;
+    padding: 5px 0 !important;
+}
+
+/* Header Gradient Card Style */
+.header-option-1 {
+    background: linear-gradient(135deg, #0D92F4, #27548A);
+    border-radius: 20px;
+    padding: 30px 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.header-option-1::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+.header-option-1 .header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-option-1 .icon-wrapper {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.header-option-1 .icon-wrapper i {
+    font-size: 36px;
+    color: white;
+}
+
+.header-option-1 .header-text h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.header-option-1 .header-text p {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+}
+
+.header-option-1 .dept-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    margin-top: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.option-label {
+    background: #f0f0f0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 15px;
+    display: inline-block;
+}
+
+/* ========================================
+   RESPONSIVE STYLES - MOBILE & TABLET
+   ======================================== */
+
+/* Tablet Landscape (1024px and below) */
+@media (max-width: 1024px) {
+    #geomap-map {
+        height: 500px;
+    }
+
     .geomap-stats-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
     }
 
     .geomap-stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        transition: transform 0.3s ease;
+        padding: 15px;
     }
 
-    .geomap-stat-card:hover {
-        transform: translateY(-5px);
+    .geomap-stat-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+    }
+
+    .geomap-stat-info h3 {
+        font-size: 24px;
+    }
+
+    .header-option-1 {
+        padding: 25px 30px;
+    }
+
+    .header-option-1 .icon-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+
+    .header-option-1 .icon-wrapper i {
+        font-size: 30px;
+    }
+
+    .header-option-1 .header-text h2 {
+        font-size: 24px;
+    }
+}
+
+/* Tablet Portrait (768px and below) */
+@media (max-width: 768px) {
+    #geomap-map {
+        height: 450px;
+        min-height: 400px;
+    }
+
+    .geomap-stats-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .geomap-stat-card {
+        padding: 15px;
+        gap: 12px;
     }
 
     .geomap-stat-icon {
         width: 50px;
         height: 50px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-size: 24px;
-        color: white;
     }
 
-    .geomap-stat-icon.blue { background: linear-gradient(135deg, #36d1dc, #5b86e5); }
-    .geomap-stat-icon.purple { background: linear-gradient(135deg, #6a11cb, #2575fc); }
-    .geomap-stat-icon.green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-
     .geomap-stat-info h3 {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 700;
-        color: #333;
+        font-size: 26px;
     }
 
     .geomap-stat-info p {
-        margin: 0;
-        font-size: 14px;
-        color: #666;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-
-    /* Map Container */
-    .geomap-card {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        font-size: 13px;
     }
 
     .geomap-header {
-        background: linear-gradient(135deg, #0D92F4, #27548A);
-        padding: 20px 25px;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
     }
 
     .geomap-header-left h2 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .geomap-header-left p {
-        margin: 8px 0 0 0;
-        font-size: 14px;
-        opacity: 0.9;
-    }
-
-    .geomap-header-right {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .geomap-filter-select-header {
-        padding: 10px 16px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        color: white;
-        background: rgba(255, 255, 255, 0.15);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-    }
-
-    .geomap-filter-select-header option {
-        color: #333;
-        background: white;
-    }
-
-    .geomap-filter-select-header:hover {
-        background: rgba(255, 255, 255, 0.25);
-        border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    .geomap-filter-select-header:focus {
-        outline: none;
-        background: rgba(255, 255, 255, 0.25);
-        border-color: white;
-        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
-    }
-
-    .geomap-export-btn {
-        background: white;
-        color: #084672ff;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    .geomap-export-btn:hover {
-        background: #f0f9ff;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    .geomap-export-btn:active {
-        transform: translateY(0);
-    }
-
-    .geomap-export-btn i {
         font-size: 18px;
     }
 
-    #geomap-map {
-        height: 600px;
+    .geomap-header-left p {
+        font-size: 13px;
+    }
+
+    .geomap-header-right {
         width: 100%;
+        flex-direction: column;
+        gap: 10px;
     }
 
-    /* Legend */
-    .geomap-legend {
-        background: white;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        line-height: 20px;
-    }
-
-    .geomap-legend h6 {
-        margin: 0 0 10px 0;
-        font-weight: 700;
-        color: #333;
+    .geomap-filter-select-header,
+    .geomap-export-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px;
         font-size: 14px;
     }
 
-    .geomap-legend-item {
-        display: flex;
+    /* Header responsive */
+    .header-option-1 {
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+    }
+
+    .header-option-1 .header-content {
+        flex-direction: row;
         align-items: center;
-        margin: 5px 0;
+        gap: 15px;
+    }
+
+    .header-option-1 .icon-wrapper {
+        width: 55px;
+        height: 55px;
+        flex-shrink: 0;
+    }
+
+    .header-option-1 .icon-wrapper i {
+        font-size: 28px;
+    }
+
+    .header-option-1 .header-text h2 {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+
+    .header-option-1 .header-text p {
         font-size: 13px;
     }
 
-    .geomap-legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        margin-right: 8px;
-        border: 2px solid rgba(0,0,0,0.2);
-    }
-
-    /* Popup */
-    .geomap-popup-content {
-        font-family: "Segoe UI", sans-serif;
+    /* Improve popup sizing on tablets */
+    .leaflet-popup-content-wrapper {
+        max-width: 280px;
     }
 
     .geomap-popup-content h6 {
-        margin: 0 0 8px 0;
-        color: #0D92F4;
-        font-weight: 700;
-        font-size: 16px;
+        font-size: 15px;
     }
 
     .geomap-popup-content p {
-        margin: 4px 0;
+        font-size: 12px;
+    }
+
+    /* Legend adjustments */
+    .geomap-legend {
+        padding: 12px;
+        max-width: 200px;
+    }
+
+    .geomap-legend h6 {
         font-size: 13px;
     }
 
-    .geomap-popup-content strong {
-        color: #333;
+    .geomap-legend-item {
+        font-size: 12px;
     }
 
-    .approximate-location {
-        animation: pulse 2s infinite;
+    .geomap-legend-color {
+        width: 18px;
+        height: 18px;
     }
 
-    @keyframes pulse {
-        0%, 100% { opacity: 0.6; }
-        50% { opacity: 1; }
+    /* Improve marker visibility on mobile */
+    .leaflet-marker-icon {
+        cursor: pointer;
     }
 
-    /* Layer Control Styles */
-    .leaflet-control-layers {
-        border-radius: 8px !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important;
-        border: none !important;
+    /* Improve popup close button touch target */
+    .leaflet-popup-close-button {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 24px !important;
+        line-height: 30px !important;
     }
 
+    /* Better touch handling for map */
+    .leaflet-container {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    /* Better popup animation on mobile */
+    .leaflet-popup {
+        margin-bottom: 30px;
+    }
+}
+
+/* Mobile Landscape (667px and below) */
+@media (max-width: 667px) and (orientation: landscape) {
+    #geomap-map {
+        height: 350px;
+        min-height: 300px;
+    }
+
+    .geomap-stats-container {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .geomap-stat-card {
+        padding: 10px;
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+
+    .geomap-stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .geomap-stat-info h3 {
+        font-size: 20px;
+    }
+
+    .geomap-stat-info p {
+        font-size: 11px;
+    }
+
+    .header-option-1 {
+        padding: 15px;
+    }
+
+    .header-option-1 .header-text h2 {
+        font-size: 18px;
+    }
+
+    .header-option-1 .header-text p {
+        font-size: 12px;
+    }
+}
+
+/* Mobile Portrait (480px and below) */
+@media (max-width: 480px) {
+    #geomap-map {
+        height: 400px;
+        min-height: 350px;
+    }
+
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .geomap-stats-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .geomap-stat-card {
+        padding: 12px 15px;
+        gap: 12px;
+    }
+
+    .geomap-stat-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+    }
+
+    .geomap-stat-info h3 {
+        font-size: 24px;
+    }
+
+    .geomap-stat-info p {
+        font-size: 12px;
+    }
+
+    .geomap-card {
+        border-radius: 12px;
+    }
+
+    .geomap-header {
+        padding: 15px;
+    }
+
+    .geomap-header-left h2 {
+        font-size: 16px;
+        gap: 8px;
+    }
+
+    .geomap-header-left h2 i {
+        font-size: 20px;
+    }
+
+    .geomap-header-left p {
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .geomap-filter-select-header,
+    .geomap-export-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .geomap-export-btn i {
+        font-size: 16px;
+    }
+
+    /* Header mobile optimization */
+    .header-option-1 {
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .header-option-1::before {
+        width: 250px;
+        height: 250px;
+    }
+
+    .header-option-1 .header-content {
+        gap: 12px;
+    }
+
+    .header-option-1 .icon-wrapper {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+    }
+
+    .header-option-1 .icon-wrapper i {
+        font-size: 24px;
+    }
+
+    .header-option-1 .header-text h2 {
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+
+    .header-option-1 .header-text p {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .header-option-1 .dept-badge {
+        font-size: 11px;
+        padding: 5px 12px;
+        margin-top: 8px;
+    }
+
+    /* Popup mobile optimization */
+    .leaflet-popup-content-wrapper {
+        max-width: 240px;
+        border-radius: 8px;
+    }
+
+    .geomap-popup-content {
+        padding: 5px;
+    }
+
+    .geomap-popup-content h6 {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .geomap-popup-content p {
+        font-size: 11px;
+        margin: 3px 0;
+    }
+
+    /* Legend mobile optimization */
+    .geomap-legend {
+        padding: 10px;
+        max-width: 180px;
+        font-size: 11px;
+    }
+
+    .geomap-legend h6 {
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .geomap-legend-item {
+        margin: 4px 0;
+        font-size: 11px;
+    }
+
+    .geomap-legend-color {
+        width: 16px;
+        height: 16px;
+        margin-right: 6px;
+    }
+
+    /* Leaflet controls mobile optimization */
     .leaflet-control-layers-toggle {
-        background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"%3e%3cpath fill="%230D92F4" d="m21.484 7.125l-9.022-5a1.003 1.003 0 0 0-.968 0l-8.978 4.96a1 1 0 0 0-.003 1.748l9.022 5.04a.995.995 0 0 0 .973.001l8.978-5a1 1 0 0 0-.002-1.749zm-9.461 4.73l-6.964-3.89L12 4.98l6.964 3.99l-6.941 3.885z"/%3e%3cpath fill="%230D92F4" d="M12 15.856l-8.515-4.73l-.971 1.748l9 5a1 1 0 0 0 .971 0l9-5l-.971-1.748L12 15.856z"/%3e%3cpath fill="%230D92F4" d="M12 19.856l-8.515-4.73l-.971 1.748l9 5a1 1 0 0 0 .971 0l9-5l-.971-1.748L12 19.856z"/%3e%3c/svg%3e') !important;
+        width: 38px !important;
+        height: 38px !important;
+        background-size: 20px 20px !important;
+    }
+
+    .leaflet-control-zoom a {
+        width: 38px;
+        height: 38px;
+        line-height: 38px;
+        font-size: 20px;
+    }
+
+    /* Improve touch targets */
+    .leaflet-touch .leaflet-control-layers-toggle {
         width: 44px !important;
         height: 44px !important;
-        background-size: 24px 24px !important;
-        background-position: center !important;
     }
 
-    .leaflet-control-layers-expanded {
-        padding: 10px !important;
-        font-family: "Segoe UI", sans-serif !important;
+    .leaflet-touch .leaflet-control-zoom a {
+        width: 44px;
+        height: 44px;
+        line-height: 44px;
     }
 
-    .leaflet-control-layers-base label,
-    .leaflet-control-layers-overlays label {
-        font-size: 13px !important;
-        color: #333 !important;
-        padding: 5px 0 !important;
+    /* Better touch feedback */
+    .leaflet-marker-icon {
+        transition: transform 0.1s ease;
+    }
+    
+    .leaflet-marker-icon:active {
+        transform: scale(1.1);
     }
 
-    /* Responsive */
+    /* Improve legend positioning on mobile */
+    .leaflet-bottom.leaflet-right {
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .leaflet-bottom.leaflet-left {
+        bottom: 10px;
+        left: 10px;
+    }
+}
+
+/* Extra Small Mobile (375px and below) */
+@media (max-width: 375px) {
+    #geomap-map {
+        height: 350px;
+        min-height: 320px;
+    }
+
+    .geomap-stat-card {
+        padding: 10px 12px;
+    }
+
+    .geomap-stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .geomap-stat-info h3 {
+        font-size: 22px;
+    }
+
+    .geomap-stat-info p {
+        font-size: 11px;
+    }
+
+    .header-option-1 .header-text h2 {
+        font-size: 16px;
+    }
+
+    .header-option-1 .header-text p {
+        font-size: 11px;
+    }
+
+    .geomap-header-left h2 {
+        font-size: 15px;
+    }
+
+    .geomap-filter-select-header,
+    .geomap-export-btn {
+        font-size: 12px;
+        padding: 9px 12px;
+    }
+
+    .leaflet-popup-content-wrapper {
+        max-width: 220px;
+    }
+
+    .geomap-legend {
+        max-width: 160px;
+        padding: 8px;
+    }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    #geomap-map {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Fix for iOS Safari viewport height */
     @media (max-width: 768px) {
         #geomap-map {
-            height: 450px;
-        }
-
-        .geomap-stats-container {
-            grid-template-columns: 1fr;
-        }
-
-        .geomap-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .geomap-header-right {
-            width: 100%;
-            flex-direction: column;
-        }
-
-        .geomap-filter-select-header,
-        .geomap-export-btn {
-            width: 100%;
-            justify-content: center;
+            height: 50vh;
+            min-height: 350px;
         }
     }
-    /* Option 1: Gradient Card Style */
-        .header-option-1 {
-            background: linear-gradient(135deg, #0D92F4, #27548A);
-            border-radius: 20px;
-            padding: 30px 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
+}
 
-        .header-option-1::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 400px;
-            height: 400px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        .header-option-1 .header-content {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .header-option-1 .icon-wrapper {
-            width: 70px;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        }
-
-        .header-option-1 .icon-wrapper i {
-            font-size: 36px;
-            color: white;
-        }
-
-        .header-option-1 .header-text h2 {
-            font-size: 28px;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .header-option-1 .header-text p {
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 400;
-        }
-
-        .header-option-1 .dept-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.25);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            color: white;
-            margin-top: 10px;
-            backdrop-filter: blur(10px);
-        }
-        @media (max-width: 768px) {
-            .header-option-2 .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .header-option-1 .header-content,
-            .header-option-3 .header-content,
-            .header-option-4 .header-content,
-            .header-option-5 .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .header-option-1 h2,
-            .header-option-2 h2,
-            .header-option-3 h2,
-            .header-option-4 h2,
-            .header-option-5 h2 {
-                font-size: 22px;
-            }
-        }
-
-        .option-label {
-            background: #f0f0f0;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 15px;
-            display: inline-block;
-        }
+/* High DPI screens (Retina displays) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .leaflet-marker-icon {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
 </style>
 
 <div class="container-fluid">
@@ -907,4 +1386,178 @@ $totalAppointments = array_sum(array_column($appointmentLocations, 'count'));
         }
     }, 500);
 })();
+function getDeviceType() {
+    const width = window.innerWidth;
+    if (width <= 480) return 'mobile';
+    if (width <= 768) return 'tablet';
+    return 'desktop';
+}
+
+function getResponsiveMarkerSize(count, maxCount, minCount) {
+    const deviceType = getDeviceType();
+    const range = maxCount - minCount;
+    const normalized = range > 0 ? (count - minCount) / range : 0.5;
+    
+    let baseSize, maxSize;
+    
+    switch(deviceType) {
+        case 'mobile':
+            baseSize = 20;
+            maxSize = 36;
+            break;
+        case 'tablet':
+            baseSize = 22;
+            maxSize = 42;
+            break;
+        default: // desktop
+            baseSize = 24;
+            maxSize = 56;
+    }
+    
+    const size = baseSize + (normalized * (maxSize - baseSize));
+    
+    return {
+        iconSize: [size, size * 1.4],
+        iconAnchor: [size / 2, size * 1.4],
+        popupAnchor: [0, -size * 1.4]
+    };
+}
+
+// Update the getMarkerSize function in your existing code to use this:
+function getMarkerSize(count) {
+    return getResponsiveMarkerSize(count, maxCount, minCount);
+}
+
+// Add mobile-specific map options
+function getMobileMapOptions() {
+    const isMobile = window.innerWidth <= 768;
+    
+    return {
+        zoomControl: !isMobile, // Hide zoom controls on mobile initially
+        dragging: true,
+        touchZoom: true,
+        scrollWheelZoom: isMobile ? false : true, // Disable scroll zoom on mobile
+        doubleClickZoom: true,
+        boxZoom: !isMobile,
+        tap: isMobile,
+        tapTolerance: 15,
+        bounceAtZoomLimits: true
+    };
+}
+
+// Enhanced map initialization with mobile support
+function initGeoMap() {
+    console.log('GeoMap: Starting initialization...');
+    
+    if (geomapInstance !== null) {
+        console.log('GeoMap: Removing existing map instance...');
+        geomapInstance.remove();
+        geomapInstance = null;
+    }
+    
+    const mapContainer = document.getElementById('geomap-map');
+    if (!mapContainer) {
+        console.error('GeoMap: Map container not found!');
+        return;
+    }
+    
+    mapContainer.innerHTML = '';
+    
+    // Apply mobile-specific options
+    const mapOptions = getMobileMapOptions();
+    geomapInstance = L.map('geomap-map', mapOptions).setView([13.8383, 121.9782], 13);
+    
+    // Re-add zoom control for mobile in better position
+    if (window.innerWidth <= 768) {
+        L.control.zoom({
+            position: 'bottomleft'
+        }).addTo(geomapInstance);
+        
+        // Add scroll zoom notice for mobile
+        geomapInstance.on('click', function() {
+            if (!geomapInstance.scrollWheelZoom.enabled()) {
+                geomapInstance.scrollWheelZoom.enable();
+            }
+        });
+        
+        // Disable scroll zoom when clicking outside
+        geomapInstance.on('mouseout', function() {
+            if (window.innerWidth <= 768) {
+                geomapInstance.scrollWheelZoom.disable();
+            }
+        });
+    }
+    
+    // ... rest of your initialization code ...
+    
+    // Add resize handler to update marker sizes
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (geomapInstance) {
+                geomapInstance.invalidateSize();
+                // Optionally re-render markers with new sizes
+                const currentFilter = document.getElementById('geomap-time-filter')?.value || 'all';
+                updateMapData(currentFilter);
+            }
+        }, 250);
+    });
+    
+    // Improve touch handling for markers
+    geomapInstance.on('popupopen', function(e) {
+        const px = geomapInstance.project(e.popup._latlng);
+        px.y -= e.popup._container.clientHeight / 2;
+        geomapInstance.panTo(geomapInstance.unproject(px), {animate: true});
+    });
+}
+
+// Add this CSS dynamically for better mobile interaction
+function addMobileStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Prevent text selection on double-tap */
+        .leaflet-container {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Better touch feedback */
+        .leaflet-marker-icon {
+            transition: transform 0.1s ease;
+        }
+        
+        .leaflet-marker-icon:active {
+            transform: scale(1.1);
+        }
+        
+        /* Improve legend positioning on mobile */
+        @media (max-width: 480px) {
+            .leaflet-bottom.leaflet-right {
+                bottom: 10px;
+                right: 10px;
+            }
+            
+            .leaflet-bottom.leaflet-left {
+                bottom: 10px;
+                left: 10px;
+            }
+        }
+        
+        /* Better popup animation on mobile */
+        @media (max-width: 768px) {
+            .leaflet-popup {
+                margin-bottom: 30px;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Call this when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    addMobileStyles();
+});
 </script>

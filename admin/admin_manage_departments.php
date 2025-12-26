@@ -723,193 +723,694 @@ while ($row = $stmt->fetch()) {
         }
 
         /* Responsive Design */
-        @media (max-width: 992px) {
-            .page-title {
-                font-size: 1.75rem;
-            }
+@media (max-width: 992px) {
+    .page-header {
+        padding: 1.75rem;
+    }
+    
+    .page-title {
+        font-size: 1.75rem;
+    }
 
-            .page-title i {
-                font-size: 2rem;
-            }
+    .page-title i {
+        font-size: 2rem;
+    }
 
-            .stat-number {
-                font-size: 2.25rem;
-            }
+    .stat-number {
+        font-size: 1.5rem;
+    }
 
-           .dept-acronym i {
-                color: white !important;
-                font-size: 1.75rem;
-            }
-        }
+    .dept-acronym {
+        font-size: 1.35rem;
+    }
+    
+    .dept-acronym i {
+        color: white !important;
+        font-size: 1.5rem;
+    }
+    
+    .modal-dialog {
+        margin: 1rem;
+    }
+    
+    .service-badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.75rem;
+    }
+}
 
-        @media (max-width: 768px) {
-            .page-header {
-                padding: 1.5rem 0;
-            }
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 2rem;
+    }
+    
+    .page-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 15px;
+    }
 
-            .page-title {
-                font-size: 1.5rem;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-            }
+    .page-title {
+        font-size: 1.5rem;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .page-title i {
+        font-size: 1.75rem;
+    }
 
-            .btn-add-dept {
-                width: 100%;
-                justify-content: center;
-                margin-top: 1rem;
-            }
+    .btn-add-dept {
+        width: 100%;
+        justify-content: center;
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+    }
 
-            .stats-overview {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
+    /* Stats Overview */
+    .stats-overview {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
 
-            .stat-card {
-                padding: 1.5rem;
-            }
+    .stat-card {
+        padding: 1.25rem;
+    }
+    
+    .stat-icon {
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+    }
+    
+    .stat-number {
+        font-size: 1.75rem;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+    }
 
-            .search-section {
-                padding: 1.5rem;
-            }
+    /* Search Section */
+    .search-section {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 15px;
+    }
+    
+    .search-input {
+        padding: 0.875rem 1.25rem 0.875rem 3.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .search-icon {
+        left: 1.25rem;
+        font-size: 1.125rem;
+    }
 
-            .btn-clear {
-                margin-top: 1rem;
-            }
+    .btn-clear {
+        margin-top: 1rem;
+        padding: 0.875rem 1.5rem;
+    }
 
-            .dept-card-wrapper {
-                margin-bottom: 1.5rem;
-            }
+    /* Department Cards */
+    .dept-card-wrapper {
+        margin-bottom: 1.25rem;
+    }
 
-            .dept-card-header {
-                padding: 1.5rem;
-            }
+    .dept-card-header {
+        padding: 1.25rem;
+    }
 
-            .dept-acronym {
-                font-size: 1.5rem;
-            }
+    .dept-acronym {
+        font-size: 1.35rem;
+    }
+    
+    .dept-acronym i {
+        font-size: 1.5rem;
+    }
+    
+    .dept-name {
+        font-size: 0.85rem;
+    }
 
-            .dept-card-body {
-                padding: 1.5rem;
-                min-height: auto;
-            }
+    .dept-card-body {
+        padding: 1.25rem;
+        min-height: auto;
+    }
+    
+    .service-badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.75rem;
+        margin: 0.15rem;
+    }
 
-            .modal-body {
-                padding: 1.75rem;
-            }
+    /* Modal Adjustments */
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .modal-content {
+        border-radius: 20px;
+    }
 
-            .modal-header {
-                padding: 1.5rem;
-            }
+    .modal-body {
+        padding: 1.75rem;
+        max-height: 60vh;
+    }
 
-            .modal-footer {
-                padding: 1.5rem;
-                flex-direction: column;
-            }
+    .modal-header {
+        padding: 1.5rem;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .modal-header h5 {
+        font-size: 1.25rem;
+    }
+    
+    .modal-header h5 i {
+        font-size: 1.5rem;
+    }
 
-            .modal-footer .btn {
-                width: 100%;
-            }
+    .modal-footer {
+        padding: 1.25rem 1.5rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 
-            .service-edit-block {
-                padding: 1.25rem;
-            }
-        }
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Form Elements */
+    .form-label {
+        font-size: 0.95rem;
+    }
+    
+    .form-control-custom {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
 
-        @media (max-width: 576px) {
-            .page-header {
-                padding: 1.25rem 0;
-            }
+    .service-edit-block {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
+    
+    .input-group {
+        flex-wrap: nowrap;
+    }
+    
+    .info-label {
+        font-size: 1rem;
+    }
 
-            .page-title {
-                font-size: 1.25rem;
-            }
+    .service-name {
+        font-size: 1rem;
+    }
+    
+    .service-item {
+        padding: 1.25rem;
+    }
+    
+    .service-item .remove-btn {
+        opacity: 1;
+        min-width: 32px;
+        height: 32px;
+        padding: 0.5rem;
+    }
+    
+    /* Button Sizes */
+    .btn-primary-custom,
+    .btn-success-custom,
+    .btn-warning-custom,
+    .btn-danger-custom {
+        padding: 0.75rem 1.75rem;
+        font-size: 0.95rem;
+    }
+    
+    .btn-outline-custom {
+        padding: 0.65rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-sm-custom {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        padding: 3rem 1.5rem;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.25rem;
+    }
+}
 
-            .page-title i {
-                font-size: 1.5rem;
-            }
+@media (max-width: 576px) {
+    .page-header {
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+        border-radius: 12px;
+    }
 
-            .stat-icon {
-                width: 60px;
-                height: 60px;
-                font-size: 1.75rem;
-            }
+    .page-title {
+        font-size: 1.25rem;
+        gap: 0.5rem;
+    }
 
-            .stat-number {
-                font-size: 2rem;
-            }
+    .page-title i {
+        font-size: 1.5rem;
+    }
+    
+    .btn-add-dept {
+        font-size: 0.9rem;
+        padding: 0.7rem 1.25rem;
+    }
 
-            .dept-acronym {
-                font-size: 1.35rem;
-            }
+    /* Stats */
+    .stat-card {
+        padding: 1rem;
+        flex-direction: row;
+        gap: 0.75rem;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.35rem;
+    }
 
-            .dept-acronym i {
-                color: white !important;
-                font-size: 1.75rem;
-            }
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+    }
 
-            .service-badge {
-                font-size: 0.8rem;
-                padding: 0.4rem 0.9rem;
-            }
+    /* Search */
+    .search-section {
+        padding: 1.25rem;
+        border-radius: 12px;
+    }
+    
+    .search-input {
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        font-size: 0.9rem;
+        border-radius: 25px;
+    }
+    
+    .search-icon {
+        left: 1rem;
+        font-size: 1rem;
+    }
+    
+    .btn-clear {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+        border-radius: 25px;
+    }
 
-            .modal-header h5 {
-                font-size: 1.25rem;
-            }
+    /* Department Cards */
+    .dept-card {
+        border-radius: 12px;
+    }
+    
+    .dept-card-header {
+        padding: 1rem;
+    }
+    
+    .dept-acronym {
+        font-size: 1.25rem;
+    }
 
-            .info-label {
-                font-size: 1rem;
-            }
+    .dept-acronym i {
+        font-size: 1.35rem;
+        color: white !important;
+    }
+    
+    .dept-name {
+        font-size: 0.8rem;
+    }
 
-            .service-name {
-                font-size: 1rem;
-            }
-        }
+    .dept-card-body {
+        padding: 1rem;
+    }
 
-        /* Tablet Landscape */
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .dept-card-wrapper {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
+    .service-badge {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.65rem;
+        margin: 0.125rem;
+    }
+    
+    .empty-services {
+        font-size: 0.85rem;
+        padding: 1rem;
+    }
 
-            .stats-overview {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        /* Add this to your style block */
-        .btn-danger-custom {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            border: none;
-            color: white;
-            padding: 0.875rem 2.25rem;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    /* Modals */
+    .modal-dialog {
+        margin: 0.25rem;
+        max-width: calc(100% - 0.5rem);
+    }
+    
+    .modal-content {
+        border-radius: 16px;
+    }
+    
+    .modal-header {
+        padding: 1.25rem;
+        border-radius: 16px 16px 0 0;
+    }
 
-        .btn-danger-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
-            color: white;
-        }
-        .service-item .remove-btn {
-            opacity: 0;
-            transition: var(--transition);
-            min-width: 36px;
-            height: 36px;
-        }
+    .modal-header h5 {
+        font-size: 1.125rem;
+    }
+    
+    .modal-header h5 i {
+        font-size: 1.35rem;
+    }
+    
+    .modal-header .close {
+        font-size: 1.75rem;
+    }
 
-        .service-item:hover .remove-btn {
-            opacity: 1;
-        }
+    .modal-body {
+        padding: 1.25rem;
+        max-height: 55vh;
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.25rem;
+    }
 
-        .service-item .d-flex {
-            gap: 1rem;
-        }
+    /* Form Elements */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-label i {
+        font-size: 1rem;
+    }
+    
+    .form-control-custom {
+        padding: 0.65rem 0.875rem;
+        font-size: 0.875rem;
+        border-radius: 10px;
+    }
+    
+    .service-edit-block {
+        padding: 1rem;
+        border-radius: 10px;
+    }
+
+    /* Service Items */
+    .info-label {
+        font-size: 0.95rem;
+    }
+    
+    .info-label i {
+        font-size: 1.125rem;
+    }
+
+    .service-item {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 10px;
+    }
+    
+    .service-item .d-flex {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .service-item .remove-btn {
+        opacity: 1;
+        align-self: flex-end;
+        margin-top: 0.75rem;
+    }
+
+    .service-name {
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .service-name i {
+        font-size: 1.125rem;
+    }
+    
+    .requirement-list li {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn-primary-custom,
+    .btn-success-custom,
+    .btn-warning-custom,
+    .btn-danger-custom {
+        padding: 0.65rem 1.5rem;
+        font-size: 0.9rem;
+        border-radius: 25px;
+    }
+    
+    .btn-outline-custom {
+        padding: 0.6rem 1.25rem;
+        font-size: 0.875rem;
+        border-radius: 25px;
+    }
+    
+    .btn-sm-custom {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8rem;
+    }
+    
+    .remove-btn {
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .remove-btn i {
+        font-size: 1rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+        padding: 2.5rem 1rem;
+    }
+    
+    .empty-state i {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.125rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.9rem;
+    }
+    
+    /* Notification */
+    .custom-notification {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none !important;
+        font-size: 0.9rem;
+        padding: 0.875rem 1.25rem;
+    }
+    
+    .custom-notification i {
+        font-size: 1.35rem !important;
+    }
+}
+
+/* Tablet Landscape (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .dept-card-wrapper {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .stats-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-dialog {
+        max-width: 90%;
+        margin: 1.75rem auto;
+    }
+    
+    .service-item .remove-btn {
+        opacity: 1;
+    }
+}
+
+/* Small Tablets (576px - 768px) */
+@media (min-width: 576px) and (max-width: 768px) {
+    .dept-card-wrapper {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .stats-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-dialog {
+        max-width: 95%;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Make buttons and interactive elements easier to tap */
+    .btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .close {
+        padding: 0.75rem;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .dept-card {
+        -webkit-tap-highlight-color: rgba(13, 146, 244, 0.1);
+    }
+    
+    /* Always show delete buttons on touch devices */
+    .service-item .remove-btn {
+        opacity: 1 !important;
+    }
+    
+    /* Improve scrolling on modals */
+    .modal-body {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Improve form inputs on touch devices */
+    input, textarea, select {
+        font-size: 16px !important; /* Prevents zoom on iOS */
+    }
+}
+
+/* Landscape Mobile Phones */
+@media (max-width: 896px) and (orientation: landscape) {
+    .modal-dialog {
+        margin: 0.5rem auto;
+    }
+    
+    .modal-body {
+        max-height: 50vh;
+    }
+    
+    .page-header {
+        padding: 1rem;
+    }
+    
+    .stats-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Very Small Devices (max-width: 360px) */
+@media (max-width: 360px) {
+    .page-title {
+        font-size: 1.125rem;
+    }
+    
+    .page-title i {
+        font-size: 1.35rem;
+    }
+    
+    .stat-number {
+        font-size: 1.35rem;
+    }
+    
+    .dept-acronym {
+        font-size: 1.125rem;
+    }
+    
+    .dept-acronym i {
+        font-size: 1.25rem !important;
+        color: white !important;
+    }
+    
+    .service-badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .modal-header h5 {
+        font-size: 1rem;
+    }
+    
+    .btn-primary-custom,
+    .btn-success-custom,
+    .btn-warning-custom,
+    .btn-danger-custom {
+        padding: 0.6rem 1.25rem;
+        font-size: 0.875rem;
+    }
+}
+/* Prevent horizontal scroll on mobile */
+body {
+    overflow-x: hidden;
+}
+
+.container {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Better spacing for mobile */
+@media (max-width: 768px) {
+    .row {
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+    
+    .col-md-6, .col-lg-4 {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+/* Improve modal scrolling on mobile */
+.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+/* Better tap targets for mobile */
+@media (max-width: 768px) {
+    .btn, button, a {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+}
     </style>
 </head>
 <body>

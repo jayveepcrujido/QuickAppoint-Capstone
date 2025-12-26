@@ -18,6 +18,9 @@ if (!$resident) {
 }
 $residentId = $resident['id'];
 
+$highlightAppointmentId = isset($_GET['highlight']) ? (int)$_GET['highlight'] : null;
+
+
 // ✅ Fetch pending appointments
 $queryPending = "
     SELECT a.id, a.transaction_id, a.scheduled_for, a.reason, a.requested_at,
@@ -51,6 +54,7 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
         box-shadow: 0 10px 30px rgba(245, 158, 11, 0.2);
         position: relative;
         overflow: hidden;
+        margin-top: -4rem;
     }
 
     .page-header::before {
@@ -137,10 +141,10 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
     /* Appointment Cards */
     .appointment-card {
         background: white;
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 1.25rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.85rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
         transition: all 0.3s ease;
         border-left: 4px solid #f59e0b;
         position: relative;
@@ -152,87 +156,87 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
         position: absolute;
         top: 0;
         right: 0;
-        width: 100px;
-        height: 100px;
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent);
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), transparent);
         border-radius: 0 0 0 100%;
     }
 
     .appointment-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 30px rgba(245, 158, 11, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.12);
     }
 
     .appointment-number {
         position: absolute;
-        top: 1rem;
-        right: 1rem;
+        top: 0.75rem;
+        right: 0.75rem;
         background: linear-gradient(135deg, #f59e0b, #d97706);
         color: white;
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 0.9rem;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        font-size: 0.8rem;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
     }
 
     .card-header-section {
-        margin-bottom: 1.25rem;
+        margin-bottom: 0.75rem;
     }
 
     .transaction-badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
         background: linear-gradient(135deg, #f59e0b, #d97706);
         color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 25px;
+        padding: 0.4rem 0.85rem;
+        border-radius: 20px;
         font-weight: 600;
-        font-size: 0.9rem;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        font-size: 0.85rem;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
     }
 
     .status-badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
         background: #fef3c7;
         color: #92400e;
-        padding: 0.4rem 0.85rem;
-        border-radius: 25px;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         margin-left: 0.5rem;
     }
 
     .info-grid {
         display: grid;
-        gap: 1rem;
-        margin-bottom: 1.25rem;
+        gap: 0.6rem;
+        margin-bottom: 0.75rem;
     }
 
     .info-item {
         display: flex;
         align-items: flex-start;
-        gap: 0.75rem;
+        gap: 0.6rem;
     }
 
     .info-icon {
-        width: 38px;
-        height: 38px;
+        width: 30px;
+        height: 30px;
         background: linear-gradient(135deg, #fef3c7, #fde68a);
-        border-radius: 10px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         color: #f59e0b;
-        font-size: 1.1rem;
+        font-size: 0.9rem;
     }
 
     .info-content {
@@ -240,40 +244,40 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
     }
 
     .info-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: #7f8c8d;
         text-transform: uppercase;
         font-weight: 600;
         letter-spacing: 0.5px;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.15rem;
     }
 
     .info-value {
         color: #2c3e50;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
     .schedule-highlight {
         background: linear-gradient(135deg, #fef3c7, #fde68a);
-        padding: 0.75rem 1rem;
-        border-radius: 12px;
+        padding: 0.6rem 0.85rem;
+        border-radius: 10px;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
+        gap: 0.6rem;
+        margin-bottom: 0.65rem;
     }
 
     .schedule-icon {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         background: #f59e0b;
-        border-radius: 10px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
 
     .schedule-text {
@@ -283,49 +287,23 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
     .schedule-date {
         font-weight: 700;
         color: #92400e;
-        font-size: 1rem;
-        margin-bottom: 0.125rem;
+        font-size: 0.95rem;
+        margin-bottom: 0.1rem;
     }
 
     .schedule-time {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #92400e;
         opacity: 0.8;
-    }
-
-    .reason-section {
-        background: #f8fafc;
-        padding: 0.85rem 1rem;
-        border-radius: 10px;
-        margin-bottom: 1rem;
-    }
-
-    .reason-label {
-        font-size: 0.75rem;
-        color: #7f8c8d;
-        text-transform: uppercase;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .reason-text {
-        color: #2c3e50;
-        font-size: 0.9rem;
-        line-height: 1.6;
-        margin: 0;
     }
 
     .requested-info {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
+        gap: 0.4rem;
+        font-size: 0.8rem;
         color: #7f8c8d;
-        padding-top: 0.75rem;
+        padding-top: 0.65rem;
         border-top: 1px solid #e5e7eb;
     }
 
@@ -355,51 +333,51 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .appointment-card {
-            padding: 1.25rem;
+            padding: 0.9rem;
         }
 
         .appointment-number {
-            width: 35px;
-            height: 35px;
-            font-size: 0.85rem;
+            width: 30px;
+            height: 30px;
+            font-size: 0.75rem;
         }
 
         .transaction-badge {
-            font-size: 0.85rem;
-            padding: 0.4rem 0.85rem;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.75rem;
         }
 
         .status-badge {
-            font-size: 0.8rem;
-            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.65rem;
             display: block;
             margin-left: 0;
-            margin-top: 0.5rem;
+            margin-top: 0.4rem;
             width: fit-content;
         }
 
         .info-grid {
-            gap: 0.85rem;
+            gap: 0.5rem;
         }
 
         .info-icon {
-            width: 35px;
-            height: 35px;
-            font-size: 1rem;
+            width: 28px;
+            height: 28px;
+            font-size: 0.85rem;
         }
 
         .schedule-highlight {
-            padding: 0.65rem 0.85rem;
+            padding: 0.5rem 0.75rem;
         }
 
         .schedule-icon {
-            width: 35px;
-            height: 35px;
-            font-size: 1.1rem;
+            width: 30px;
+            height: 30px;
+            font-size: 0.95rem;
         }
 
         .schedule-date {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
     }
 
@@ -413,13 +391,30 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
 
         .info-item {
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
     }
 
     @media (min-width: 769px) {
         .info-grid {
             grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .highlight-appointment {
+        animation: highlightFade 2s ease-in-out;
+    }
+
+    @keyframes highlightFade {
+        0% {
+            background-color: #fff3cd;
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+            transform: scale(1.02);
+        }
+        100% {
+            background-color: white;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            transform: scale(1);
         }
     }
 </style>
@@ -448,7 +443,8 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
     <?php else: ?>
         <!-- Appointment Cards -->
         <?php foreach ($pendingAppointments as $index => $appt): ?>
-            <div class="appointment-card">
+            <div class="appointment-card <?php echo ($appt['id'] == $highlightAppointmentId) ? 'to-highlight' : ''; ?>" 
+                        id="appointment-<?php echo $appt['id']; ?>">
                 <div class="appointment-number"><?= $index + 1 ?></div>
 
                 <div class="card-header-section">
@@ -510,17 +506,6 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     </div>
                 </div>
-
-                <?php if (!empty($appt['reason'])): ?>
-                <div class="reason-section">
-                    <div class="reason-label">
-                        <i class="fas fa-comment-dots"></i>
-                        Reason for Appointment
-                    </div>
-                    <p class="reason-text"><?= htmlspecialchars($appt['reason']) ?></p>
-                </div>
-                <?php endif; ?>
-
                 <div class="requested-info">
                     <i class="far fa-clock"></i>
                     Requested on <?= date('F d, Y \a\t h:i A', strtotime($appt['requested_at'])) ?>
@@ -532,3 +517,24 @@ $pendingAppointments = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Find the appointment to highlight
+    var $highlightedAppointment = $('.to-highlight');
+    
+    if ($highlightedAppointment.length) {
+        // Scroll to the appointment
+        setTimeout(function() {
+            $('html, body').animate({
+                scrollTop: $highlightedAppointment.offset().top - 100
+            }, 500);
+            
+            // Add temporary highlight effect
+            $highlightedAppointment.addClass('highlight-appointment');
+            setTimeout(function() {
+                $highlightedAppointment.removeClass('highlight-appointment');
+            }, 2000);
+        }, 300);
+    }
+});
+</script>

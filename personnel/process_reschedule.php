@@ -2,85 +2,149 @@
 session_start();
 include '../conn.php';
 
+header('Content-Type: application/json');
+
+// Check authentication
 if (!isset($_SESSION['auth_id']) || $_SESSION['role'] !== 'LGU Personnel') {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $appt_id = $_POST['appointment_id'];
-    $old_date_id = $_POST['old_date_id'];
-    $old_time_slot = $_POST['old_time_slot']; // '09:00:00' or '14:00:00'
-    $new_date_id = $_POST['new_date_id'];
-    $new_time_slot = $_POST['new_time_slot']; // '09:00:00' or '14:00:00'
+// Get department_id
+$stmt = $pdo->prepare("SELECT department_id FROM lgu_personnel WHERE auth_id = ?");
+$stmt->execute([$_SESSION['auth_id']]);
+$department_id = $stmt->fetchColumn();
 
-    // Validate date format and combine with new time
-    // We need to fetch the actual date string from the database using new_date_id
-    $stmtDate = $pdo->prepare("SELECT date_time FROM available_dates WHERE id = ?");
-    $stmtDate->execute([$new_date_id]);
-    $dateRow = $stmtDate->fetch();
+if (!$department_id) {
+    echo json_encode(['success' => false, 'message' => 'No department assigned']);
+    exit();
+}
+
+// Validate input
+$appointment_id = $_POST['appointment_id'] ?? null;
+// Old values might be empty if the appointment wasn't scheduled yet
+$old_date_id = !empty($_POST['old_date_id']) ? $_POST['old_date_id'] : null;
+$old_time_slot = !empty($_POST['old_time_slot']) ? $_POST['old_time_slot'] : null;
+$new_date_id = $_POST['new_date_id'] ?? null;
+$new_time_slot = $_POST['new_time_slot'] ?? null;
+
+if (!$appointment_id || !$new_date_id || !$new_time_slot) {
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Missing required fields',
+        'debug' => $_POST
+    ]);
+    exit();
+}
+
+try {
+    $pdo->beginTransaction();
     
-    if (!$dateRow) {
-        echo json_encode(['success' => false, 'message' => 'Invalid date selected.']);
-        exit();
+    // ==================================================================================
+    // 1. VERIFY APPOINTMENT (Universal Check)
+    // We changed the status check to IN ('No Show', 'Pending') so it works for both files
+    // ==================================================================================
+    $checkStmt = $pdo->prepare("
+        SELECT id, available_date_id, scheduled_for, status
+        FROM appointments 
+        WHERE id = ? 
+        AND department_id = ? 
+        AND status IN ('No Show', 'Pending')
+    ");
+    $checkStmt->execute([$appointment_id, $department_id]);
+    $appointment = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$appointment) {
+        throw new Exception('Appointment not found, unauthorized, or status is not editable.');
     }
-
-    // Create the new DATETIME string (YYYY-MM-DD HH:MM:SS)
-    $baseDate = date('Y-m-d', strtotime($dateRow['date_time']));
-    $newScheduledFor = $baseDate . ' ' . $new_time_slot;
-
-    try {
-        $pdo->beginTransaction();
-
-        // 1. Decrement count on OLD date (if it exists)
-        if ($old_date_id) {
-            $isAmOld = (date('H', strtotime($old_time_slot)) < 12);
-            $colToDec = $isAmOld ? 'am_booked' : 'pm_booked';
-            
-            $decStmt = $pdo->prepare("UPDATE available_dates SET $colToDec = GREATEST(0, $colToDec - 1) WHERE id = ?");
-            $decStmt->execute([$old_date_id]);
-        }
-
-        // 2. Increment count on NEW date
-        $isAmNew = (date('H', strtotime($new_time_slot)) < 12);
-        $colToInc = $isAmNew ? 'am_booked' : 'pm_booked';
-        $slotLimit = $isAmNew ? 'am_slots' : 'pm_slots';
-
-        // Check availability one last time (race condition prevention)
-        $checkStmt = $pdo->prepare("SELECT $colToInc, $slotLimit FROM available_dates WHERE id = ?");
-        $checkStmt->execute([$new_date_id]);
-        $availability = $checkStmt->fetch();
-
-        if ($availability[$colToInc] >= $availability[$slotLimit]) {
-            throw new Exception("The selected slot was just booked by someone else.");
-        }
-
-        $incStmt = $pdo->prepare("UPDATE available_dates SET $colToInc = $colToInc + 1 WHERE id = ?");
-        $incStmt->execute([$new_date_id]);
-
-        // 3. Update Appointment
-        $updateAppt = $pdo->prepare("UPDATE appointments SET 
-                                     scheduled_for = ?, 
-                                     available_date_id = ?, 
-                                     updated_at = NOW() 
-                                     WHERE id = ?");
-        $updateAppt->execute([$newScheduledFor, $new_date_id, $appt_id]);
-
-        // 4. Send Notification to Resident (Optional but recommended)
-        $resQuery = $pdo->prepare("SELECT resident_id FROM appointments WHERE id = ?");
-        $resQuery->execute([$appt_id]);
-        $resident_id = $resQuery->fetchColumn();
+    
+    // 2. Get the new date details
+    $dateStmt = $pdo->prepare("
+        SELECT 
+            id,
+            DATE(date_time) as date,
+            am_slots, pm_slots,
+            am_booked, pm_booked
+        FROM available_dates
+        WHERE id = ? AND department_id = ?
+    ");
+    $dateStmt->execute([$new_date_id, $department_id]);
+    $newDate = $dateStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$newDate) {
+        throw new Exception('Selected date not found.');
+    }
+    
+    // 3. Check slot availability
+    $isAM = ($new_time_slot === '09:00:00');
+    $available = $isAM 
+        ? ($newDate['am_slots'] - $newDate['am_booked']) > 0
+        : ($newDate['pm_slots'] - $newDate['pm_booked']) > 0;
+    
+    if (!$available) {
+        throw new Exception('Selected time slot is fully booked.');
+    }
+    
+    // 4. Decrease booking count on OLD date (Only if it was previously scheduled)
+    if ($old_date_id && $old_time_slot) {
+        $oldIsAM = ($old_time_slot === '09:00:00');
+        $oldColumn = $oldIsAM ? 'am_booked' : 'pm_booked';
         
-        $notifMsg = "Your appointment has been rescheduled to " . date('F j, Y g:i A', strtotime($newScheduledFor));
-        $notifStmt = $pdo->prepare("INSERT INTO notifications (resident_id, appointment_id, message) VALUES (?, ?, ?)");
-        $notifStmt->execute([$resident_id, $appt_id, $notifMsg]);
-
-        $pdo->commit();
-        echo json_encode(['success' => true]);
-
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        $decreaseStmt = $pdo->prepare("
+            UPDATE available_dates 
+            SET $oldColumn = GREATEST(0, $oldColumn - 1)
+            WHERE id = ?
+        ");
+        $decreaseStmt->execute([$old_date_id]);
     }
+    
+    // 5. Increase booking count on NEW date
+    $newColumn = $isAM ? 'am_booked' : 'pm_booked';
+    $increaseStmt = $pdo->prepare("
+        UPDATE available_dates 
+        SET $newColumn = $newColumn + 1
+        WHERE id = ?
+    ");
+    $increaseStmt->execute([$new_date_id]);
+    
+    // 6. Update the appointment
+    // Note: We force status to 'Pending' regardless of whether it was 'No Show' before.
+    $newScheduledFor = $newDate['date'] . ' ' . $new_time_slot;
+    
+    $updateStmt = $pdo->prepare("
+        UPDATE appointments 
+        SET available_date_id = ?,
+            scheduled_for = ?,
+            status = 'Pending',
+            updated_at = NOW()
+        WHERE id = ?
+    ");
+    $updateStmt->execute([$new_date_id, $newScheduledFor, $appointment_id]);
+    
+    $pdo->commit();
+    
+    // Format the date nicely for response
+    $formattedDate = date('F j, Y', strtotime($newDate['date']));
+    $formattedTime = date('g:i A', strtotime($new_time_slot));
+    
+    echo json_encode([
+        'success' => true,
+        'message' => "Appointment successfully rescheduled to {$formattedDate} at {$formattedTime}",
+        'new_date' => $newDate['date'],
+        'new_time' => $new_time_slot
+    ]);
+    
+} catch (Exception $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    
+    // Log error for debugging
+    error_log("Reschedule Error: " . $e->getMessage());
+    
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 ?>

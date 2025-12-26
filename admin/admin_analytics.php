@@ -33,70 +33,116 @@ $totalDepartments = getCount($conn, "SELECT COUNT(*) FROM departments");
 // $totalCommendations = getCount($conn, "SELECT COUNT(*) FROM commendations");
 // $totalComplaints = getCount($conn, "SELECT COUNT(*) FROM complaints");
 
-// ====== APPOINTMENTS BY DEPARTMENT ======
+// ====== APPOINTMENTS BY DEPARTMENT WITH DATES ======
 $deptLabels = [];
-$deptCounts = [];
-$res = $conn->query("SELECT d.name, COUNT(a.id) AS total FROM appointments a 
+$deptByDate = [];
+$res = $conn->query("SELECT d.name, DATE_FORMAT(a.requested_at, '%Y-%m-%d') as date, COUNT(a.id) AS total 
+                     FROM appointments a 
                      JOIN departments d ON a.department_id = d.id 
-                     GROUP BY d.id ORDER BY d.name");
+                     GROUP BY d.id, DATE_FORMAT(a.requested_at, '%Y-%m-%d') 
+                     ORDER BY d.name, date ASC");
 while ($row = $res->fetch_assoc()) {
-    $deptLabels[] = $row['name'];
-    $deptCounts[] = $row['total'];
+    if (!in_array($row['name'], $deptLabels)) {
+        $deptLabels[] = $row['name'];
+    }
+    $deptByDate[] = $row;
 }
 
-// ====== APPOINTMENTS BY SERVICE ======
-$serviceLabels = [];
-$serviceCounts = [];
-$res = $conn->query("SELECT s.service_name, COUNT(a.id) AS total 
+// ====== APPOINTMENTS BY SERVICE WITH DATES ======
+$serviceByDate = [];
+$res = $conn->query("SELECT s.service_name, DATE_FORMAT(a.requested_at, '%Y-%m-%d') as date, COUNT(a.id) AS total 
                      FROM appointments a 
                      JOIN department_services s ON a.service_id = s.id 
-                     GROUP BY s.id ORDER BY total DESC LIMIT 8");
+                     GROUP BY s.id, DATE_FORMAT(a.requested_at, '%Y-%m-%d') 
+                     ORDER BY date ASC");
 while ($row = $res->fetch_assoc()) {
-    $serviceLabels[] = $row['service_name'];
-    $serviceCounts[] = $row['total'];
+    $serviceByDate[] = $row;
 }
 
-// ====== MONTHLY TREND (Current Year) ======
-$monthlyData = array_fill(1, 12, 0);
-$res = $conn->query("SELECT MONTH(requested_at) AS m, COUNT(*) AS c 
+// ====== MONTHLY TREND WITH DATES ======
+$monthlyTrend = [];
+$res = $conn->query("SELECT DATE_FORMAT(requested_at, '%Y-%m-%d') as date, COUNT(*) as total
                      FROM appointments 
-                     WHERE YEAR(requested_at)=YEAR(CURDATE()) 
-                     GROUP BY MONTH(requested_at)");
+                     GROUP BY DATE_FORMAT(requested_at, '%Y-%m-%d') 
+                     ORDER BY date ASC");
 while ($row = $res->fetch_assoc()) {
-    $monthlyData[(int)$row['m']] = (int)$row['c'];
-}
-$monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-// ====== RESIDENT DEMOGRAPHICS ======
-$sexLabels = [];
-$sexCounts = [];
-$res = $conn->query("SELECT sex, COUNT(*) as total FROM residents GROUP BY sex");
-while ($row = $res->fetch_assoc()) {
-    $sexLabels[] = ucfirst($row['sex']);
-    $sexCounts[] = $row['total'];
+    $monthlyTrend[] = $row;
 }
 
-// Age Groups
-$ageGroups = [
-    '<18' => 0,
-    '18-30' => 0,
-    '31-50' => 0,
-    '50+' => 0
-];
-$res = $conn->query("SELECT TIMESTAMPDIFF(YEAR, birthday, CURDATE()) AS age FROM residents WHERE birthday IS NOT NULL");
+// ====== RESIDENT SEX WITH DATES ======
+$sexByDate = [];
+$res = $conn->query("SELECT r.sex, DATE_FORMAT(r.created_at, '%Y-%m-%d') as date, COUNT(*) as total 
+                     FROM residents r 
+                     GROUP BY r.sex, DATE_FORMAT(r.created_at, '%Y-%m-%d') 
+                     ORDER BY date ASC");
 while ($row = $res->fetch_assoc()) {
-    $age = (int)$row['age'];
-    if ($age < 18) $ageGroups['<18']++;
-    elseif ($age <= 30) $ageGroups['18-30']++;
-    elseif ($age <= 50) $ageGroups['31-50']++;
-    else $ageGroups['50+']++;
+    $sexByDate[] = $row;
+}
+
+// ====== AGE GROUPS WITH DATES ======
+$ageByDate = [];
+$res = $conn->query("SELECT 
+                        CASE 
+                            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) < 18 THEN '<18'
+                            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) <= 30 THEN '18-30'
+                            WHEN TIMESTAMPDIFF(YEAR, birthday, CURDATE()) <= 50 THEN '31-50'
+                            ELSE '50+'
+                        END as age_group,
+                        DATE_FORMAT(created_at, '%Y-%m-%d') as date,
+                        COUNT(*) as total
+                     FROM residents 
+                     WHERE birthday IS NOT NULL
+                     GROUP BY age_group, DATE_FORMAT(created_at, '%Y-%m-%d')
+                     ORDER BY date ASC");
+while ($row = $res->fetch_assoc()) {
+    $ageByDate[] = $row;
+}
+
+// ====== APPOINTMENTS WITH DATES (for filtering) ======
+$appointmentsWithDates = [];
+$res = $conn->query("SELECT DATE_FORMAT(requested_at, '%Y-%m-%d') as date, status, COUNT(*) as total 
+                     FROM appointments 
+                     GROUP BY DATE_FORMAT(requested_at, '%Y-%m-%d'), status 
+                     ORDER BY date ASC");
+while ($row = $res->fetch_assoc()) {
+    $appointmentsWithDates[] = $row;
+}
+
+// ====== RESIDENTS WITH DATES (for filtering) ======
+$residentsWithDates = [];
+$res = $conn->query("SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as date, COUNT(*) as total 
+                     FROM residents 
+                     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d') 
+                     ORDER BY date ASC");
+while ($row = $res->fetch_assoc()) {
+    $residentsWithDates[] = $row;
+}
+
+// ====== LGU PERSONNEL WITH DATES (for filtering) ======
+$personnelWithDates = [];
+$res = $conn->query("SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as date, COUNT(*) as total 
+                     FROM lgu_personnel 
+                     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d') 
+                     ORDER BY date ASC");
+while ($row = $res->fetch_assoc()) {
+    $personnelWithDates[] = $row;
+}
+
+// ====== DEPARTMENTS WITH DATES (for filtering) ======
+$departmentsWithDates = [];
+$res = $conn->query("SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as date, COUNT(*) as total 
+                     FROM departments 
+                     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d') 
+                     ORDER BY date ASC");
+while ($row = $res->fetch_assoc()) {
+    $departmentsWithDates[] = $row;
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Super Admin Dashboard</title>
+    <title>Super Admin Analytics</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -111,13 +157,14 @@ body {
 }
 
 /* Enhanced Header */
-header { 
+.analytics-header { 
     background: linear-gradient(135deg, #0D92F4 0%, #27548A 100%);
     padding: 20px 30px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     position: relative;
     top: 1;
     backdrop-filter: blur(10px);
+    border-radius: 15px;
 }
 
 .header-container {
@@ -518,27 +565,162 @@ canvas {
         transform: translateY(0);
     }
 }
+.global-filter-bar {
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    padding: 20px 30px;
+    margin: 0 30px 25px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    border: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.global-filter-bar .filter-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+}
+
+.global-filter-bar .filter-title i {
+    font-size: 24px;
+    color: #667eea;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.global-filter-bar .filter-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 2px solid #e0e0e0;
+    background: #fff;
+    color: #666;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-btn:hover {
+    border-color: #0D92F4;
+    color: #0D92F4;
+    transform: translateY(-2px);
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #0D92F4, #27548A);
+    color: #fff;
+    border-color: #0D92F4;
+    box-shadow: 0 4px 12px rgba(13, 146, 244, 0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .global-filter-bar {
+        padding: 15px 18px;
+        margin: 0 15px 18px 15px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .global-filter-bar .filter-title {
+        font-size: 15px;
+        width: 100%;
+    }
+    
+    .global-filter-bar .filter-buttons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .filter-btn {
+        flex: 1;
+        min-width: auto;
+    }
+}
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.summary-card .value {
+    transition: all 0.3s ease;
+}
     </style>
 </head>
 <body>
-<header>
+<header class="analytics-header">
     <div class="header-container">
-        <h2 class="title"><i class='bx bxs-dashboard bx-tada'></i>Admin Dashboard</h2>
+        <h2 class="title"><i class='bx bxs-dashboard bx-tada'></i>Admin Analytics</h2>
         <div class="datetime"><span id="today-date"></span> | <span id="clock"></span></div>
     </div>
 </header>
 
 <!-- Summary Cards -->
 <div class="summary">
-    <div class="summary-card purple"><div class="icon"><i class='bx bx-calendar-check'></i></div><div class="value"><?= $totalAppointments ?></div><div class="label">Appointments</div></div>
-    <!-- <div class="summary-card green"><div class="icon"><i class='bx bx-check-circle'></i></div><div class="value"><?= $completedAppointments ?></div><div class="label">Completed</div></div> -->
-    <!-- <div class="summary-card orange"><div class="icon"><i class='bx bx-time'></i></div><div class="value"><?= $pendingAppointments ?></div><div class="label">Pending</div></div> -->
-    <!-- <div class="summary-card blue"><div class="icon"><i class='bx bx-calendar-day'></i></div><div class="value"><?= $todaysAppointments ?></div><div class="label">Today</div></div> -->
-    <div class="summary-card pink"><div class="icon"><i class='bx bx-user'></i></div><div class="value"><?= $registeredResidents ?></div><div class="label">Registered Residents</div></div>
-    <div class="summary-card purple"><div class="icon"><i class='bx bx-id-card'></i></div><div class="value"><?= $lguPersonnel ?></div><div class="label">LGU Personnel</div></div>
-    <div class="summary-card green"><div class="icon"><i class='bx bx-building'></i></div><div class="value"><?= $totalDepartments ?></div><div class="label">Departments</div></div>   
+    <div class="summary-card purple">
+        <div class="icon"><i class='bx bx-calendar-check'></i></div>
+        <div class="value" id="total-appointments"><?= $totalAppointments ?></div>
+        <div class="label">Appointments</div>
+    </div>
+
+    <div class="summary-card pink">
+        <div class="icon"><i class='bx bx-user'></i></div>
+        <div class="value" id="total-residents"><?= $registeredResidents ?></div>
+        <div class="label">Registered Residents</div>
+    </div>
+
+    <div class="summary-card purple">
+        <div class="icon"><i class='bx bx-id-card'></i></div>
+        <div class="value" id="total-personnel"><?= $lguPersonnel ?></div>
+        <div class="label">LGU Personnel</div>
+    </div>
+
+    <div class="summary-card green">
+        <div class="icon"><i class='bx bx-building'></i></div>
+        <div class="value" id="total-departments"><?= $totalDepartments ?></div>
+        <div class="label">Departments</div>
+    </div>   
 </div>
 
+<!-- Global Filter Bar -->
+<div class="global-filter-bar">
+    <div class="filter-title">
+        <i class='bx bx-filter-alt'></i>
+        <span>Time Period Filter</span>
+    </div>
+    <div class="filter-buttons" id="global-filter">
+        <button class="filter-btn active" data-period="weekly">Weekly</button>
+        <button class="filter-btn" data-period="monthly">Monthly</button>
+        <button class="filter-btn" data-period="yearly">Yearly</button>
+        <button class="filter-btn" data-period="all">All Time</button>
+    </div>
+</div>
 <!-- Feedback Row -->
 <!-- <div class="summary small-cards">
     <div class="summary-card orange small">
@@ -583,7 +765,10 @@ canvas {
 </div>
 
 <script>
-// Date & Time
+
+// Date & Time - More robust version
+let dateTimeInterval = null;
+
 function updateDateTime() {
     const dateEl = document.getElementById("today-date");
     const clockEl = document.getElementById("clock");
@@ -594,54 +779,423 @@ function updateDateTime() {
         clockEl.textContent = now.toLocaleTimeString('en-PH', { hour12:false });
     }
 }
-setInterval(updateDateTime, 1000); 
+
+function initDateTime() {
+    // Clear any existing interval
+    if (dateTimeInterval) {
+        clearInterval(dateTimeInterval);
+    }
+    
+    // Update immediately
+    updateDateTime();
+    
+    // Set up new interval
+    dateTimeInterval = setInterval(updateDateTime, 1000);
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDateTime);
+} else {
+    // DOM already loaded
+    initDateTime();
+}
+
+// Re-initialize when page becomes visible (handles back navigation)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        initDateTime();
+    }
+});
+
+// Initialize date/time when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+});
+
+// Also initialize immediately in case DOMContentLoaded already fired
 updateDateTime();
+setInterval(updateDateTime, 1000);
 
-// Store chart instances to prevent duplicates
-window.chartInstances = window.chartInstances || {};
+// Store chart data
+// Store summary data
+const appointmentsWithDatesData = <?= json_encode($appointmentsWithDates) ?>;
+const residentsWithDatesData = <?= json_encode($residentsWithDates) ?>;
+const personnelWithDatesData = <?= json_encode($personnelWithDates) ?>;
+const departmentsWithDatesData = <?= json_encode($departmentsWithDates) ?>;
+const deptByDateData = <?= json_encode($deptByDate) ?>;
+const deptLabelsData = <?= json_encode($deptLabels) ?>;
+const serviceByDateData = <?= json_encode($serviceByDate) ?>;
+const monthlyTrendData = <?= json_encode($monthlyTrend) ?>;
+const sexByDateData = <?= json_encode($sexByDate) ?>;
+const ageByDateData = <?= json_encode($ageByDate) ?>;
 
-// Charts initialization function (make it global)
+let currentPeriod = 'weekly';
+window.chartInstances = {};
+
+// Filter data by time period
+function filterDataByPeriod(data, period) {
+    if (!data || data.length === 0) return [];
+    
+    const now = new Date();
+    return data.filter(item => {
+        const date = new Date(item.date);
+        
+        switch(period) {
+            case 'weekly':
+                const weekDiff = Math.floor((now - date) / (7 * 24 * 60 * 60 * 1000));
+                return weekDiff < 12;
+            case 'monthly':
+                const monthDiff = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
+                return monthDiff < 12;
+            case 'yearly':
+                const yearDiff = now.getFullYear() - date.getFullYear();
+                return yearDiff < 5;
+            case 'all':
+                return true;
+            default:
+                return true;
+        }
+    });
+}
+
+// Process department data
+function processDeptData(period) {
+    const filtered = filterDataByPeriod(deptByDateData, period);
+    const deptTotals = {};
+    
+    filtered.forEach(item => {
+        deptTotals[item.name] = (deptTotals[item.name] || 0) + parseInt(item.total);
+    });
+    
+    return {
+        labels: Object.keys(deptTotals),
+        values: Object.values(deptTotals)
+    };
+}
+
+// Process service data
+function processServiceData(period) {
+    const filtered = filterDataByPeriod(serviceByDateData, period);
+    const serviceTotals = {};
+    
+    filtered.forEach(item => {
+        serviceTotals[item.service_name] = (serviceTotals[item.service_name] || 0) + parseInt(item.total);
+    });
+    
+    // Sort by total and get top 8
+    const sorted = Object.entries(serviceTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+    
+    return {
+        labels: sorted.map(s => s[0]),
+        values: sorted.map(s => s[1])
+    };
+}
+
+// Process monthly trend
+function processMonthlyData(period) {
+    const filtered = filterDataByPeriod(monthlyTrendData, period);
+    const groupedData = {};
+    
+    filtered.forEach(item => {
+        const date = new Date(item.date);
+        let key;
+        
+        switch(period) {
+            case 'weekly':
+                const weekStart = new Date(date);
+                weekStart.setDate(date.getDate() - date.getDay());
+                key = weekStart.toISOString().split('T')[0];
+                break;
+            case 'monthly':
+            case 'all':
+                key = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+                break;
+            case 'yearly':
+                key = date.getFullYear().toString();
+                break;
+        }
+        
+        groupedData[key] = (groupedData[key] || 0) + parseInt(item.total);
+    });
+    
+    const sortedKeys = Object.keys(groupedData).sort();
+    const labels = sortedKeys.map(key => {
+        switch(period) {
+            case 'weekly':
+                const d = new Date(key);
+                return 'Week of ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            case 'monthly':
+            case 'all':
+                const [year, month] = key.split('-');
+                return new Date(year, month - 1).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            case 'yearly':
+                return key;
+        }
+    });
+    
+    return {
+        labels: labels,
+        values: sortedKeys.map(key => groupedData[key])
+    };
+}
+
+// Process sex data
+function processSexData(period) {
+    const filtered = filterDataByPeriod(sexByDateData, period);
+    const sexTotals = {};
+    
+    filtered.forEach(item => {
+        const sex = item.sex.charAt(0).toUpperCase() + item.sex.slice(1);
+        sexTotals[sex] = (sexTotals[sex] || 0) + parseInt(item.total);
+    });
+    
+    return {
+        labels: Object.keys(sexTotals),
+        values: Object.values(sexTotals)
+    };
+}
+
+// Process age data
+function processAgeData(period) {
+    const filtered = filterDataByPeriod(ageByDateData, period);
+    const ageTotals = {};
+    
+    filtered.forEach(item => {
+        ageTotals[item.age_group] = (ageTotals[item.age_group] || 0) + parseInt(item.total);
+    });
+    
+    // Ensure all age groups are present
+    const ageGroups = ['<18', '18-30', '31-50', '50+'];
+    ageGroups.forEach(group => {
+        if (!ageTotals[group]) ageTotals[group] = 0;
+    });
+    
+    return {
+        labels: ageGroups,
+        values: ageGroups.map(g => ageTotals[g] || 0)
+    };
+}
+
+
+function processSummaryData(data, period) {
+    if (!data || data.length === 0) return 0;
+    const filtered = filterDataByPeriod(data, period);
+    if (!filtered || filtered.length === 0) return 0;
+    return filtered.reduce((sum, item) => sum + parseInt(item.total || 0), 0);
+}
+
+// Update summary cards
+function updateSummaryCards(period) {
+    // Update Total Appointments
+    const totalAppts = processSummaryData(appointmentsWithDatesData, period);
+    document.getElementById('total-appointments').textContent = totalAppts || 0;
+    
+    // Update Registered Residents
+    const totalResidents = processSummaryData(residentsWithDatesData, period);
+    document.getElementById('total-residents').textContent = totalResidents || 0;
+    
+    // Update LGU Personnel
+    const totalPersonnel = processSummaryData(personnelWithDatesData, period);
+    document.getElementById('total-personnel').textContent = totalPersonnel || 0;
+    
+    // Update Total Departments
+    const totalDepts = processSummaryData(departmentsWithDatesData, period);
+    document.getElementById('total-departments').textContent = totalDepts || 0;
+    
+    // Add animation effect
+    animateSummaryCards();
+}
+
+// Animate summary card values
+function animateSummaryCards() {
+    const cards = document.querySelectorAll('.summary-card .value');
+    cards.forEach((valueEl) => {
+        valueEl.style.animation = 'pulse 0.5s ease';
+    });
+}
+
+
+// Update all charts and summaries
+function updateAllCharts(period) {
+    currentPeriod = period;
+    
+    // Update Summary Cards
+    updateSummaryCards(period);
+    
+    // Update Department Chart
+    const deptData = processDeptData(period);
+    if (window.chartInstances.deptChart && deptData.labels.length > 0) {
+        window.chartInstances.deptChart.data.labels = deptData.labels;
+        window.chartInstances.deptChart.data.datasets[0].data = deptData.values;
+        window.chartInstances.deptChart.update('active');
+    }
+    
+    // Update Service Chart
+    const serviceData = processServiceData(period);
+    if (window.chartInstances.serviceChart && serviceData.labels.length > 0) {
+        window.chartInstances.serviceChart.data.labels = serviceData.labels;
+        window.chartInstances.serviceChart.data.datasets[0].data = serviceData.values;
+        window.chartInstances.serviceChart.update('active');
+    }
+    
+    // Update Monthly Trend
+    const monthData = processMonthlyData(period);
+    if (window.chartInstances.monthChart) {
+        window.chartInstances.monthChart.data.labels = monthData.labels;
+        window.chartInstances.monthChart.data.datasets[0].data = monthData.values;
+        window.chartInstances.monthChart.update('active');
+    }
+    
+    // Update Sex Chart
+    const sexData = processSexData(period);
+    if (window.chartInstances.sexChart && sexData.labels.length > 0) {
+        window.chartInstances.sexChart.data.labels = sexData.labels;
+        window.chartInstances.sexChart.data.datasets[0].data = sexData.values;
+        window.chartInstances.sexChart.update('active');
+    }
+    
+    // Update Age Chart
+    const ageData = processAgeData(period);
+    if (window.chartInstances.ageChart) {
+        window.chartInstances.ageChart.data.labels = ageData.labels;
+        window.chartInstances.ageChart.data.datasets[0].data = ageData.values;
+        window.chartInstances.ageChart.update('active');
+    }
+}
+
+// Initialize charts
 window.initializeCharts = function() {
-    // Destroy existing charts first
     Object.values(window.chartInstances).forEach(chart => {
         if (chart) chart.destroy();
     });
     window.chartInstances = {};
 
-    // Check if elements exist
     if (!document.getElementById('deptChart')) return;
 
+    // Get initial data
+    const deptData = processDeptData('weekly');
+    const serviceData = processServiceData('weekly');
+    const monthData = processMonthlyData('weekly');
+    const sexData = processSexData('weekly');
+    const ageData = processAgeData('weekly');
+
+    // Department Chart
     window.chartInstances.deptChart = new Chart(document.getElementById('deptChart'), {
         type: 'bar',
-        data: { labels: <?= json_encode($deptLabels) ?>, datasets: [{ label: 'Appointments', data: <?= json_encode($deptCounts) ?>, backgroundColor:'#36d1dc' }] },
-        options: { responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{precision:0}} } }
+        data: { 
+            labels: deptData.labels, 
+            datasets: [{ 
+                label: 'Appointments', 
+                data: deptData.values, 
+                backgroundColor:'#36d1dc',
+                borderRadius: 8 
+            }] 
+        },
+        options: { 
+            responsive:true, 
+            maintainAspectRatio: false,
+            plugins:{legend:{display:false}}, 
+            scales:{ y:{beginAtZero:true,ticks:{precision:0}} } 
+        }
     });
 
+    // Service Chart
     window.chartInstances.serviceChart = new Chart(document.getElementById('serviceChart'), {
         type: 'bar',
-        data: { labels: <?= json_encode($serviceLabels) ?>, datasets: [{ label: 'Appointments', data: <?= json_encode($serviceCounts) ?>, backgroundColor:'#9c27b0' }] },
-        options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{beginAtZero:true,ticks:{precision:0}} } }
+        data: { 
+            labels: serviceData.labels, 
+            datasets: [{ 
+                label: 'Appointments', 
+                data: serviceData.values, 
+                backgroundColor:'#9c27b0',
+                borderRadius: 8
+            }] 
+        },
+        options: { 
+            indexAxis:'y', 
+            responsive:true, 
+            maintainAspectRatio: false,
+            plugins:{legend:{display:false}}, 
+            scales:{ x:{beginAtZero:true,ticks:{precision:0}} } 
+        }
     });
 
+    // Monthly Trend Chart
     window.chartInstances.monthChart = new Chart(document.getElementById('monthChart'), {
         type: 'line',
-        data: { labels: <?= json_encode($monthLabels) ?>, datasets: [{ label:'Appointments', data: <?= json_encode(array_values($monthlyData)) ?>, borderColor:'#673ab7', backgroundColor:'rgba(103,58,183,0.2)', fill:true, tension:0.3 }] },
-        options: { responsive:true, scales:{ y:{beginAtZero:true,ticks:{precision:0}} } }
+        data: { 
+            labels: monthData.labels, 
+            datasets: [{ 
+                label:'Appointments', 
+                data: monthData.values, 
+                borderColor:'#673ab7', 
+                backgroundColor:'rgba(103,58,183,0.2)', 
+                fill:true, 
+                tension:0.3,
+                pointBackgroundColor: '#673ab7',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4
+            }] 
+        },
+        options: { 
+            responsive:true, 
+            maintainAspectRatio: false,
+            scales:{ y:{beginAtZero:true,ticks:{precision:0}} } 
+        }
     });
 
+    // Sex Chart
     window.chartInstances.sexChart = new Chart(document.getElementById('sexChart'), {
         type: 'pie',
-        data: { labels: <?= json_encode($sexLabels) ?>, datasets: [{ data: <?= json_encode($sexCounts) ?>, backgroundColor:['#4caf50','#2196f3','#ff9800'] }] }
+        data: { 
+            labels: sexData.labels, 
+            datasets: [{ 
+                data: sexData.values, 
+                backgroundColor:['#4caf50','#2196f3','#ff9800'] 
+            }] 
+        },
+        options: { 
+            responsive:true, 
+            maintainAspectRatio: false 
+        }
     });
 
+    // Age Chart
     window.chartInstances.ageChart = new Chart(document.getElementById('ageChart'), {
         type: 'bar',
-        data: { labels: <?= json_encode(array_keys($ageGroups)) ?>, datasets: [{ label: 'Residents', data: <?= json_encode(array_values($ageGroups)) ?>, backgroundColor:'#ff9800' }] },
-        options: { responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{precision:0}} } }
+        data: { 
+            labels: ageData.labels, 
+            datasets: [{ 
+                label: 'Residents', 
+                data: ageData.values, 
+                backgroundColor:'#ff9800',
+                borderRadius: 8 
+            }] 
+        },
+        options: { 
+            responsive:true, 
+            maintainAspectRatio: false,
+            plugins:{legend:{display:false}}, 
+            scales:{ y:{beginAtZero:true,ticks:{precision:0}} } 
+        }
+    });
+
+    // Global filter buttons
+    document.querySelectorAll('#global-filter .filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#global-filter .filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateAllCharts(this.dataset.period);
+        });
     });
 };
 
-// Try to initialize if page is already loaded
+// Initialize on page load
 initializeCharts();
 </script>
 </body>
