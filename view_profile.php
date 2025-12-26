@@ -60,9 +60,9 @@ $full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '
   <style>
     body {
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      min-height: 100vh;
-      padding: 40px 20px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      padding: 1.5rem 0;
     }
     
     .profile-container {
@@ -298,10 +298,6 @@ $full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['middle_name'] ?? '
 </head>
 <body>
   <div class="profile-container">
-    <a href="javascript:history.back()" class="btn-back">
-      <i class='bx bx-arrow-back'></i> Back to Dashboard
-    </a>
-    
     <div class="profile-card">
       <!-- Profile Header -->
       <div class="profile-header">

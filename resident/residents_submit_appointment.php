@@ -1,4 +1,4 @@
-//RESIDENT SUBMIT APPOINTMENT
+//RESIDENT SUBMIT APPOINTMENT - WITHOUT VALID ID UPLOAD
 <?php
 session_start();
 include '../conn.php';
@@ -26,15 +26,15 @@ if (!$resident) {
 $resident_id = $resident['id'];
 $resident_name = $resident['first_name'] . ' ' . $resident['last_name'];
 
-// ✅ Collect form inputs
+// ✅ Collect form inputs (REMOVED valid_id from validation)
 $department_id = $_POST['department_id'] ?? null;
 $available_date_id = $_POST['available_date_id'] ?? null;
 $service_id = $_POST['service'] ?? null;
 $reason = $_POST['reason'] ?? '';
 $slot_period = $_POST['slot_period'] ?? null; // 'am' or 'pm'
-$uploadDir = 'uploads/appointments/';
 
-if (!$department_id || !$available_date_id || !$service_id || !$reason || !$slot_period || !isset($_FILES['valid_id'])) {
+// UPDATED: Removed valid_id from required fields check
+if (!$department_id || !$available_date_id || !$service_id || !$reason || !$slot_period) {
     echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
     exit();
 }
@@ -42,10 +42,6 @@ if (!$department_id || !$available_date_id || !$service_id || !$reason || !$slot
 if (!in_array($slot_period, ['am', 'pm'])) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid slot period']);
     exit();
-}
-
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
 }
 
 function generateTransactionId($pdo, $department_id) {
@@ -68,15 +64,6 @@ function generateTransactionId($pdo, $department_id) {
     } while ($exists);
 
     return $transactionId;
-}
-
-// ✅ Upload valid ID
-$filename = preg_replace("/[^a-zA-Z0-9\._-]/", "_", basename($_FILES['valid_id']['name'])); // sanitize filename
-$targetPath = $uploadDir . uniqid() . '_' . $filename;
-
-if (!move_uploaded_file($_FILES['valid_id']['tmp_name'], $targetPath)) {
-    echo json_encode(['status' => 'error', 'message' => 'File upload failed']);
-    exit();
 }
 
 try {
@@ -128,11 +115,11 @@ try {
 
     $transactionId = generateTransactionId($pdo, $department_id);
 
-    // ✅ Insert appointment
+    // ✅ Insert appointment (REMOVED valid_id_path field)
     $stmt = $pdo->prepare("INSERT INTO appointments (
         transaction_id, resident_id, department_id, service_id, available_date_id,
-        valid_id_path, reason, status, requested_at, personnel_id, scheduled_for
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)");
+        reason, status, requested_at, personnel_id, scheduled_for
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)");
 
     $stmt->execute([
         $transactionId,
@@ -140,7 +127,6 @@ try {
         $department_id,
         $service_id,
         $available_date_id,
-        $targetPath,
         $reason,
         'Pending',
         $personnel_id,
@@ -234,11 +220,6 @@ try {
     // ✅ Rollback on error
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
-    }
-    
-    // Delete uploaded file if transaction failed
-    if (file_exists($targetPath)) {
-        unlink($targetPath);
     }
     
     error_log("Appointment booking error: " . $e->getMessage());

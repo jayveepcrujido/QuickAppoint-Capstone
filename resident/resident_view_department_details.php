@@ -1163,15 +1163,9 @@
                                     <i class="bx bx-briefcase"></i>
                                     Service Information
                                 </div>
-                                <div class="form-group mb-3">
+                                <div class="form-group mb-0">
                                     <label for="service">Select Service</label>
                                     <select class="form-control" name="service" id="service" required></select>
-                                </div>
-
-                                <div class="form-group mb-0">
-                                    <label for="valid_id">Upload Valid ID</label>
-                                    <input type="file" class="form-control-file" name="valid_id" id="valid_id" accept="image/*" required>
-                                    <small class="form-text text-muted">Accepted formats: JPG, PNG, PDF</small>
                                 </div>
                             </div>
 
